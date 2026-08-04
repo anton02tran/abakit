@@ -174,14 +174,10 @@ export default function HomeScreen() {
         delay: 100,
         useNativeDriver: false,
       }),
-    ]).start();
+    ]).start(() => setFlashType('correct'));
   };
 
   const appendDigit = (digit: string) => {
-    if (skipTimer.current) {
-      clearTimeout(skipTimer.current);
-      skipTimer.current = null;
-    }
     setFeedback('');
     setUserAnswer((current) => {
       if (current.length >= 7) return current;
@@ -190,10 +186,6 @@ export default function HomeScreen() {
   };
 
   const deleteDigit = () => {
-    if (skipTimer.current) {
-      clearTimeout(skipTimer.current);
-      skipTimer.current = null;
-    }
     setFeedback('');
     setUserAnswer((current) => current.slice(0, -1));
   };
@@ -208,6 +200,7 @@ export default function HomeScreen() {
     setFeedback(String(answer));
     setUserAnswer('');
     runFlash('skip');
+    generateProblem(true);
 
     if (skipTimer.current) {
       clearTimeout(skipTimer.current);
@@ -215,7 +208,6 @@ export default function HomeScreen() {
     skipTimer.current = setTimeout(() => {
       skipTimer.current = null;
       setFeedback('');
-      generateProblem(true);
     }, 900);
   };
 
