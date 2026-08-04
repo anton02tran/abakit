@@ -241,6 +241,25 @@ export default function HomeScreen() {
       setFeedback('correct!');
       generateProblem(true);
       runFlash();
+    } else if (skipMode) {
+      const answer =
+        operator === '+' ? num1 + num2 :
+        operator === '-' ? num1 - num2 :
+        operator === '×' ? num1 * num2 :
+        num1 / num2;
+
+      setFeedback(String(answer));
+      setUserAnswer('');
+      runFlash('skip');
+      generateProblem(true);
+
+      if (skipTimer.current) {
+        clearTimeout(skipTimer.current);
+      }
+      skipTimer.current = setTimeout(() => {
+        skipTimer.current = null;
+        setFeedback('');
+      }, 900);
     } else {
       setUserAnswer('');
       setFeedback('try again!');
@@ -496,7 +515,12 @@ export default function HomeScreen() {
                   </TouchableOpacity>
                 </View>
                 <View style={styles.toggleSection}>
-                  <Text style={[styles.settingsLabel, isDarkMode && styles.settingsLabelDark]}>skip mode</Text>
+                  <View>
+                    <Text style={[styles.settingsLabel, isDarkMode && styles.settingsLabelDark]}>skip mode</Text>
+                    <Text style={[styles.toggleDescription, isDarkMode && styles.toggleDescriptionDark]}>
+                      Wrong answers reveal the solution and immediately advance to the next problem.
+                    </Text>
+                  </View>
                   <TouchableOpacity
                     style={[
                       styles.toggleSwitch,
@@ -1003,6 +1027,15 @@ const styles = StyleSheet.create({
   },
   toggleThumbDark: {
     backgroundColor: '#e2e8f0',
+  },
+  toggleDescription: {
+    fontSize: 12,
+    color: '#475569',
+    marginTop: 4,
+    maxWidth: 220,
+  },
+  toggleDescriptionDark: {
+    color: '#94a3b8',
   },
   answerTextDark: {
     color: '#f8fafc',
