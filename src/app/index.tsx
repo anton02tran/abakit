@@ -1,5 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+﻿import React, { useEffect, useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+const keypadRows = [
+  ['1', '2', '3'],
+  ['4', '5', '6'],
+  ['7', '8', '9'],
+  ['clear', '0', 'delete'],
+];
 
 export default function HomeScreen() {
   const [num1, setNum1] = useState<number>(0);
@@ -8,28 +15,47 @@ export default function HomeScreen() {
   const [score, setScore] = useState<number>(0);
   const [feedback, setFeedback] = useState<string>('');
 
-  // Generate a new multiplication problem
   const generateProblem = () => {
-    const n1 = Math.floor(Math.random() * 12) + 1; // 1 to 12
-    const n2 = Math.floor(Math.random() * 12) + 1; // 1 to 12
+    const n1 = Math.floor(Math.random() * 12) + 1;
+    const n2 = Math.floor(Math.random() * 12) + 1;
+
     setNum1(n1);
     setNum2(n2);
     setUserAnswer('');
+    setFeedback('');
   };
 
-  // Run on initial screen load
   useEffect(() => {
     generateProblem();
   }, []);
 
-  // Check if the answer is correct
+  const appendDigit = (digit: string) => {
+    setUserAnswer((current) => {
+      if (current.length >= 4) return current;
+      return `${current}${digit}`;
+    });
+  };
+
+  const deleteDigit = () => {
+    setUserAnswer((current) => current.slice(0, -1));
+  };
+
+  const clearAnswer = () => {
+    setUserAnswer('');
+  };
+
   const checkAnswer = () => {
     const parsedAnswer = parseInt(userAnswer, 10);
+
+    if (!userAnswer || Number.isNaN(parsedAnswer)) {
+      setFeedback('Enter an answer first');
+      return;
+    }
 
     if (parsedAnswer === num1 * num2) {
       setScore((prev) => prev + 1);
       setFeedback('Correct! 🎉');
-      generateProblem();
+      setTimeout(generateProblem, 400);
     } else {
       setFeedback('Try again! ❌');
     }
@@ -42,18 +68,41 @@ export default function HomeScreen() {
 
       <View style={styles.card}>
         <Text style={styles.problem}>{num1} × {num2}</Text>
-        
-        <TextInput
-          style={styles.input}
-          keyboardType="numeric"
-          value={userAnswer}
-          onChangeText={setUserAnswer}
-          placeholder="Answer"
-          placeholderTextColor="#888"
-        />
 
-        <TouchableOpacity style={styles.button} onPress={checkAnswer}>
-          <Text style={styles.buttonText}>Submit</Text>
+        <View style={styles.answerBox}>
+          <Text style={styles.answerText}>{userAnswer || 'Tap numbers below'}</Text>
+        </View>
+
+        <View style={styles.keypad}>
+          {keypadRows.map((row, rowIndex) => (
+            <View key={rowIndex} style={styles.keypadRow}>
+              {row.map((key) => {
+                const isFunction = key === 'clear' || key === 'delete';
+                const label = key === 'delete' ? '⌫' : key === 'clear' ? 'Clear' : key;
+
+                return (
+                  <TouchableOpacity
+                    key={key}
+                    style={[styles.keypadButton, isFunction && styles.functionKey]}
+                    onPress={() => {
+                      if (key === 'delete') deleteDigit();
+                      else if (key === 'clear') clearAnswer();
+                      else appendDigit(key);
+                    }}
+                    activeOpacity={0.75}
+                  >
+                    <Text style={[styles.keypadButtonText, isFunction && styles.functionKeyText]}>
+                      {label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ))}
+        </View>
+
+        <TouchableOpacity style={styles.submitButton} onPress={checkAnswer} activeOpacity={0.85}>
+          <Text style={styles.submitText}>Submit</Text>
         </TouchableOpacity>
 
         {feedback !== '' && <Text style={styles.feedback}>{feedback}</Text>}
@@ -84,46 +133,92 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 30,
+    borderRadius: 20,
+    padding: 28,
     alignItems: 'center',
-    width: '90%',
+    width: '100%',
+    maxWidth: 460,
     shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 6,
   },
   problem: {
     fontSize: 48,
-    fontWeight: 'bold',
-    color: '#222',
-    marginBottom: 20,
+    fontWeight: '800',
+    color: '#111',
+    marginBottom: 22,
   },
-  input: {
+  answerBox: {
     width: '100%',
-    height: 50,
-    borderColor: '#ddd',
-    borderWidth: 2,
-    borderRadius: 10,
-    fontSize: 24,
-    textAlign: 'center',
+    minHeight: 72,
+    backgroundColor: '#eef2ff',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#dbeafe',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+    paddingHorizontal: 18,
+  },
+  answerText: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  keypad: {
+    width: '100%',
     marginBottom: 20,
-    color: '#000',
   },
-  button: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 14,
-    paddingHorizontal: 40,
-    borderRadius: 10,
+  keypadRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 14,
   },
-  buttonText: {
-    color: '#fff',
+  keypadButton: {
+    flex: 1,
+    marginHorizontal: 4,
+    height: 70,
+    borderRadius: 18,
+    backgroundColor: '#f8fafc',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 1,
+  },
+  functionKey: {
+    backgroundColor: '#dbeafe',
+  },
+  keypadButtonText: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  functionKeyText: {
+    color: '#1d4ed8',
     fontSize: 18,
-    fontWeight: 'bold',
+  },
+  submitButton: {
+    width: '100%',
+    borderRadius: 18,
+    backgroundColor: '#2563eb',
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  submitText: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '800',
   },
   feedback: {
-    marginTop: 15,
+    marginTop: 16,
     fontSize: 18,
     fontWeight: '600',
+    color: '#333',
   },
 });
