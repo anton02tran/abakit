@@ -223,8 +223,13 @@ export default function HomeScreen() {
 
                 return (
                   <TouchableOpacity
-                    key={key}
-                    style={[styles.keypadButton, isFunction && styles.functionKey]}
+                      key={key}
+                      style={[
+                        styles.keypadButton,
+                        isDarkMode && styles.keypadButtonDark,
+                        isFunction && styles.functionKey,
+                        isDarkMode && isFunction && styles.functionKeyDark,
+                      ]}
                     onPress={() => {
                       if (key === 'delete') deleteDigit();
                       else if (key === 'clear') clearAnswer();
@@ -243,12 +248,12 @@ export default function HomeScreen() {
         </View>
 
         <TouchableOpacity
-          style={[styles.submitButton, !hasAnswer && styles.submitButtonDisabled]}
+          style={[styles.submitButton, isDarkMode && styles.submitButtonDark, !hasAnswer && styles.submitButtonDisabled]}
           onPress={checkAnswer}
           activeOpacity={hasAnswer ? 0.85 : 1}
           disabled={!hasAnswer}
         >
-          <Text style={[styles.submitText, !hasAnswer && styles.submitTextDisabled]}>submit</Text>
+          <Text style={[styles.submitText, isDarkMode && styles.submitTextDark, !hasAnswer && styles.submitTextDisabled]}>submit</Text>
         </TouchableOpacity>
       </View>
 
@@ -269,7 +274,7 @@ export default function HomeScreen() {
                   key={option}
                   style={[
                     styles.operatorButton,
-                    operator === option && styles.operatorButtonSelected,
+                    operator === option && (isDarkMode ? styles.operatorButtonSelectedDark : styles.operatorButtonSelected),
                     { transform: [{ scale: operatorScales[index] }] },
                   ]}
                   onPress={() => {
@@ -281,7 +286,7 @@ export default function HomeScreen() {
                   <Text
                     style={[
                       styles.operatorText,
-                      operator === option && styles.operatorTextSelected,
+                      operator === option && (isDarkMode ? styles.operatorTextSelectedDark : styles.operatorTextSelected),
                     ]}
                   >
                     {option}
@@ -296,7 +301,7 @@ export default function HomeScreen() {
                   key={option}
                   style={[
                     styles.operatorButton,
-                    theme === option && styles.operatorButtonSelected,
+                    theme === option && (isDarkMode ? styles.operatorButtonSelectedDark : styles.operatorButtonSelected),
                   ]}
                   onPress={() => setTheme(option)}
                   activeOpacity={0.8}
@@ -304,7 +309,7 @@ export default function HomeScreen() {
                   <Text
                     style={[
                       styles.operatorText,
-                      theme === option && styles.operatorTextSelected,
+                      theme === option && (isDarkMode ? styles.operatorTextSelectedDark : styles.operatorTextSelected),
                     ]}
                   >
                     {themeIcons[option]}
@@ -379,12 +384,12 @@ const styles = StyleSheet.create({
     color: '#111827',
   },
   answerCorrectText: {
-    color: '#15803d',
-    opacity: 0.85,
+    color: '#4ade80',
+    opacity: 0.95,
   },
   answerErrorText: {
-    color: '#b91c1c',
-    opacity: 0.9,
+    color: '#f87171',
+    opacity: 0.95,
   },
   answerPlaceholderText: {
     color: '#64748b',
@@ -472,7 +477,7 @@ const styles = StyleSheet.create({
   },
   settingsOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
@@ -518,26 +523,30 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   operatorRow: {
-    width: 292,
-    alignSelf: 'center',
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   operatorButton: {
-    width: 64,
-    height: 64,
+    flex: 1,
+    minWidth: 64,
+    height: 72,
     borderRadius: 18,
     backgroundColor: '#f8fafc',
     borderWidth: 1,
     borderColor: '#dbeafe',
     alignItems: 'center',
     justifyContent: 'center',
+    marginHorizontal: 4,
   },
   operatorButtonSelected: {
     backgroundColor: '#e0f2fe',
-    borderWidth: 2,
     borderColor: '#0284c7',
+  },
+  operatorButtonSelectedDark: {
+    backgroundColor: '#0369a1',
+    borderColor: '#38bdf8',
   },
   operatorText: {
     fontSize: 28,
@@ -549,6 +558,28 @@ const styles = StyleSheet.create({
   operatorTextSelected: {
     color: '#0369a1',
   },
+  operatorTextSelectedDark: {
+    color: '#f8fafc',
+  },
+  keypadButtonDark: {
+    backgroundColor: '#334155',
+    borderColor: '#475569',
+  },
+  keypadButtonTextDark: {
+    color: '#f8fafc',
+  },
+  functionKeyDark: {
+    backgroundColor: '#1e3a8a',
+  },
+  functionKeyTextDark: {
+    color: '#f8fafc',
+  },
+  submitButtonDark: {
+    backgroundColor: '#3b82f6',
+  },
+  submitTextDark: {
+    color: '#f8fafc',
+  },
   themeLabel: {
     fontSize: 12,
     marginTop: 4,
@@ -559,19 +590,20 @@ const styles = StyleSheet.create({
     color: '#cbd5e1',
   },
   containerDark: {
-    backgroundColor: '#0f172a',
+    backgroundColor: '#090d16',
   },
   cardDark: {
-    backgroundColor: '#111827',
+    backgroundColor: '#1e293b',
   },
   scoreDark: {
-    color: '#cbd5e1',
+    color: '#f8fafc',
   },
   problemDark: {
     color: '#f8fafc',
   },
   answerBoxDark: {
-    borderColor: '#334155',
+    backgroundColor: '#1e1b4b',
+    borderColor: '#4338ca',
   },
   settingsTitleDark: {
     color: '#f8fafc',
