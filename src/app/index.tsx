@@ -292,18 +292,34 @@ export default function HomeScreen() {
 
             <View style={styles.tabRow}>
               <TouchableOpacity
-                style={[styles.tabButton, settingsTab === 'questions' && styles.tabButtonSelected]}
+                style={[
+                  styles.tabButton,
+                  settingsTab === 'questions' && (isDarkMode ? styles.tabButtonSelectedDark : styles.tabButtonSelected),
+                  isDarkMode && styles.tabButtonDark,
+                ]}
                 onPress={() => setSettingsTab('questions')}
                 activeOpacity={0.85}
               >
-                <Text style={[styles.tabText, settingsTab === 'questions' && styles.tabTextSelected]}>questions</Text>
+                <Text style={[
+                  styles.tabText,
+                  isDarkMode ? styles.tabTextDark : null,
+                  settingsTab === 'questions' && (isDarkMode ? styles.tabTextSelectedDark : styles.tabTextSelected),
+                ]}>questions</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.tabButton, settingsTab === 'personalization' && styles.tabButtonSelected]}
+                style={[
+                  styles.tabButton,
+                  settingsTab === 'personalization' && (isDarkMode ? styles.tabButtonSelectedDark : styles.tabButtonSelected),
+                  isDarkMode && styles.tabButtonDark,
+                ]}
                 onPress={() => setSettingsTab('personalization')}
                 activeOpacity={0.85}
               >
-                <Text style={[styles.tabText, settingsTab === 'personalization' && styles.tabTextSelected]}>personalization</Text>
+                <Text style={[
+                  styles.tabText,
+                  isDarkMode ? styles.tabTextDark : null,
+                  settingsTab === 'personalization' && (isDarkMode ? styles.tabTextSelectedDark : styles.tabTextSelected),
+                ]}>personalization</Text>
               </TouchableOpacity>
             </View>
 
