@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "mental-math-app",
-    "slug": "mental-math-app",
+    "name": "abakit",
+    "slug": "abakit",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "mentalmathapp",
+    "scheme": "abakit",
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon"
