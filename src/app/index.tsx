@@ -189,8 +189,8 @@ export default function HomeScreen() {
     <View style={[styles.container, isDarkMode && styles.containerDark]}>
       <View style={styles.headerRow}>
         <Text style={[styles.title, isDarkMode && styles.titleDark]}>abakit</Text>
-        <TouchableOpacity style={styles.settingsButton} onPress={() => setSettingsOpen(true)} activeOpacity={0.8}>
-          <Text style={styles.settingsButtonText}>settings</Text>
+        <TouchableOpacity style={[styles.settingsButton, isDarkMode && styles.settingsButtonDark]} onPress={() => setSettingsOpen(true)} activeOpacity={0.8}>
+          <Text style={[styles.settingsButtonText, isDarkMode && styles.settingsButtonTextDark]}>settings</Text>
         </TouchableOpacity>
       </View>
       <Text style={[styles.score, isDarkMode && styles.scoreDark]}>score: {score}</Text>
@@ -263,7 +263,7 @@ export default function HomeScreen() {
         </View>
 
         <TouchableOpacity
-          style={[styles.submitButton, isDarkMode && styles.submitButtonDark, !hasAnswer && styles.submitButtonDisabled]}
+          style={[styles.submitButton, styles.submitButtonRaised, isDarkMode && styles.submitButtonDark, !hasAnswer && styles.submitButtonDisabled]}
           onPress={checkAnswer}
           activeOpacity={hasAnswer ? 0.85 : 1}
           disabled={!hasAnswer}
