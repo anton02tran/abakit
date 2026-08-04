@@ -36,6 +36,7 @@ export default function HomeScreen() {
   const textOpacity = useRef(new Animated.Value(1)).current;
   const operatorScales = useRef(operatorOptions.map(() => new Animated.Value(1))).current;
   const themeScales = useRef(themeOptions.map(() => new Animated.Value(1))).current;
+  const skipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     Animated.parallel(
@@ -175,6 +176,10 @@ export default function HomeScreen() {
   };
 
   const appendDigit = (digit: string) => {
+    if (skipTimer.current) {
+      clearTimeout(skipTimer.current);
+      skipTimer.current = null;
+    }
     setFeedback('');
     setUserAnswer((current) => {
       if (current.length >= 7) return current;
@@ -183,6 +188,10 @@ export default function HomeScreen() {
   };
 
   const deleteDigit = () => {
+    if (skipTimer.current) {
+      clearTimeout(skipTimer.current);
+      skipTimer.current = null;
+    }
     setFeedback('');
     setUserAnswer((current) => current.slice(0, -1));
   };
@@ -194,9 +203,16 @@ export default function HomeScreen() {
       operator === '×' ? num1 * num2 :
       num1 / num2;
 
+    setScore((prev) => prev + 1);
     setFeedback(String(answer));
     setUserAnswer('');
-    setTimeout(() => {
+    runFlash();
+
+    if (skipTimer.current) {
+      clearTimeout(skipTimer.current);
+    }
+    skipTimer.current = setTimeout(() => {
+      skipTimer.current = null;
       setFeedback('');
       generateProblem(true);
     }, 900);
