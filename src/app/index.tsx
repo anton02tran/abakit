@@ -24,6 +24,7 @@ export default function HomeScreen() {
   const flashAnim = useRef(new Animated.Value(0)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const textOpacity = useRef(new Animated.Value(1)).current;
+  const operatorHighlight = useRef(new Animated.Value(0)).current;
 
   const generateProblem = (keepFeedback = false) => {
     let n1 = Math.floor(Math.random() * 12) + 1;
@@ -74,6 +75,16 @@ export default function HomeScreen() {
       useNativeDriver: false,
     }).start();
   }, [displayText, textOpacity]);
+
+  useEffect(() => {
+    const currentIndex = operatorOptions.indexOf(operator);
+    Animated.timing(operatorHighlight, {
+      toValue: currentIndex * 76,
+      duration: 240,
+      easing: Easing.out(Easing.ease),
+      useNativeDriver: false,
+    }).start();
+  }, [operator, operatorHighlight]);
 
   const runShake = () => {
     shakeAnim.setValue(0);
@@ -242,13 +253,16 @@ export default function HomeScreen() {
 
             <Text style={styles.settingsLabel}>operator</Text>
             <View style={styles.operatorRow}>
+              <Animated.View
+                style={[
+                  styles.operatorHighlight,
+                  { transform: [{ translateX: operatorHighlight }] },
+                ]}
+              />
               {operatorOptions.map((option) => (
                 <TouchableOpacity
                   key={option}
-                  style={[
-                    styles.operatorButton,
-                    operator === option && styles.operatorButtonSelected,
-                  ]}
+                  style={[styles.operatorButton, styles.operatorButtonMargin]}
                   onPress={() => {
                     setOperator(option);
                     generateProblem();
@@ -470,8 +484,19 @@ const styles = StyleSheet.create({
   },
   operatorRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
+    alignItems: 'center',
+    position: 'relative',
+  },
+  operatorHighlight: {
+    position: 'absolute',
+    width: 64,
+    height: 64,
+    borderRadius: 18,
+    backgroundColor: '#e0f2fe',
+    borderWidth: 2,
+    borderColor: '#0284c7',
+    top: 0,
+    left: 0,
   },
   operatorButton: {
     width: 64,
@@ -480,6 +505,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8fafc',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  operatorButtonMargin: {
+    marginRight: 12,
   },
   operatorButtonSelected: {
     backgroundColor: '#e0f2fe',
