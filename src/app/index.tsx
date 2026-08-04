@@ -277,7 +277,15 @@ export default function HomeScreen() {
           <View style={[styles.settingsCard, isDarkMode && styles.settingsCardDark]}>
             <View style={styles.settingsHeader}>
               <Text style={[styles.settingsTitle, isDarkMode && styles.settingsTitleDark]}>settings</Text>
-              <TouchableOpacity style={styles.closeButton} onPress={() => setSettingsOpen(false)} activeOpacity={0.8}>
+              <TouchableOpacity
+                style={[
+                  styles.closeButton,
+                  styles.closeButtonBorder,
+                  isDarkMode && styles.closeButtonBorderDark,
+                ]}
+                onPress={() => setSettingsOpen(false)}
+                activeOpacity={0.8}
+              >
                 <Text style={[styles.closeText, isDarkMode && styles.closeTextDark]}>close</Text>
               </TouchableOpacity>
             </View>
@@ -298,6 +306,8 @@ export default function HomeScreen() {
                 <Text style={[styles.tabText, settingsTab === 'personalization' && styles.tabTextSelected]}>personalization</Text>
               </TouchableOpacity>
             </View>
+
+            <View style={[styles.tabDivider, isDarkMode && styles.tabDividerDark]} />
 
             {settingsTab === 'questions' ? (
               <>
@@ -624,6 +634,42 @@ const styles = StyleSheet.create({
   },
   tabTextSelected: {
     color: '#0369a1',
+  },
+  tabTextDark: {
+    color: '#cbd5e1',
+  },
+  tabTextSelectedDark: {
+    color: '#38bdf8',
+  },
+  tabButtonDark: {
+    backgroundColor: 'transparent',
+  },
+  tabButtonSelectedDark: {
+    backgroundColor: '#111827',
+    borderWidth: 1,
+    borderColor: '#38bdf8',
+  },
+  tabDivider: {
+    height: 1,
+    backgroundColor: '#eef2ff',
+    marginVertical: 12,
+    borderRadius: 1,
+  },
+  tabDividerDark: {
+    height: 1,
+    backgroundColor: '#0b1220',
+    marginVertical: 12,
+    borderRadius: 1,
+  },
+  closeButtonBorder: {
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderRadius: 8,
+  },
+  closeButtonBorderDark: {
+    borderWidth: 1,
+    borderColor: '#334155',
+    borderRadius: 8,
   },
   keypadButtonDark: {
     backgroundColor: '#334155',
