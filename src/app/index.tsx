@@ -37,6 +37,7 @@ export default function HomeScreen() {
   const operatorScales = useRef(operatorOptions.map(() => new Animated.Value(1))).current;
   const themeScales = useRef(themeOptions.map(() => new Animated.Value(1))).current;
   const skipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flashRunId = useRef(0);
   const [flashType, setFlashType] = useState<'correct' | 'skip'>('correct');
 
   useEffect(() => {
@@ -159,8 +160,12 @@ export default function HomeScreen() {
   };
 
   const runFlash = (type: 'correct' | 'skip' = 'correct') => {
+    flashRunId.current += 1;
+    const currentRun = flashRunId.current;
     setFlashType(type);
+    flashAnim.stopAnimation();
     flashAnim.setValue(0);
+
     Animated.sequence([
       Animated.timing(flashAnim, {
         toValue: 1,
@@ -174,7 +179,11 @@ export default function HomeScreen() {
         delay: 100,
         useNativeDriver: false,
       }),
-    ]).start(() => setFlashType('correct'));
+    ]).start(() => {
+      if (flashRunId.current === currentRun) {
+        setFlashType('correct');
+      }
+    });
   };
 
   const appendDigit = (digit: string) => {
