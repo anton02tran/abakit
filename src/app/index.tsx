@@ -21,6 +21,7 @@ export default function HomeScreen() {
   const [num2, setNum2] = useState<number>(0);
   const [operator, setOperator] = useState<Operator>('×');
   const [theme, setTheme] = useState<ThemeMode>('light');
+  const [settingsTab, setSettingsTab] = useState<'questions' | 'personalization'>('questions');
   const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
   const [userAnswer, setUserAnswer] = useState<string>('');
   const [score, setScore] = useState<number>(0);
@@ -281,57 +282,81 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
 
-            <Text style={[styles.settingsLabel, isDarkMode && styles.settingsLabelDark]}>operator</Text>
-            <View style={styles.operatorRow}>
-              {operatorOptions.map((option, index) => (
-                <AnimatedTouchableOpacity
-                  key={option}
-                  style={[
-                    styles.operatorButton,
-                    operator === option && (isDarkMode ? styles.operatorButtonSelectedDark : styles.operatorButtonSelected),
-                    { transform: [{ scale: operatorScales[index] }] },
-                  ]}
-                  onPress={() => {
-                    setOperator(option);
-                    generateProblem();
-                  }}
-                  activeOpacity={0.8}
-                >
-                  <Text
-                    style={[
-                      styles.operatorText,
-                      operator === option && (isDarkMode ? styles.operatorTextSelectedDark : styles.operatorTextSelected),
-                    ]}
-                  >
-                    {option}
-                  </Text>
-                </AnimatedTouchableOpacity>
-              ))}
+            <View style={styles.tabRow}>
+              <TouchableOpacity
+                style={[styles.tabButton, settingsTab === 'questions' && styles.tabButtonSelected]}
+                onPress={() => setSettingsTab('questions')}
+                activeOpacity={0.85}
+              >
+                <Text style={[styles.tabText, settingsTab === 'questions' && styles.tabTextSelected]}>questions</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.tabButton, settingsTab === 'personalization' && styles.tabButtonSelected]}
+                onPress={() => setSettingsTab('personalization')}
+                activeOpacity={0.85}
+              >
+                <Text style={[styles.tabText, settingsTab === 'personalization' && styles.tabTextSelected]}>personalization</Text>
+              </TouchableOpacity>
             </View>
-            <Text style={[styles.settingsLabel, isDarkMode && styles.settingsLabelDark]}>personalization</Text>
-            <View style={styles.operatorRow}>
-              {themeOptions.map((option, index) => (
-                <AnimatedTouchableOpacity
-                  key={option}
-                  style={[
-                    styles.operatorButton,
-                    theme === option && (isDarkMode ? styles.operatorButtonSelectedDark : styles.operatorButtonSelected),
-                    { transform: [{ scale: themeScales[index] }] },
-                  ]}
-                  onPress={() => setTheme(option)}
-                  activeOpacity={0.8}
-                >
-                  <Text
-                    style={[
-                      styles.operatorText,
-                      theme === option && (isDarkMode ? styles.operatorTextSelectedDark : styles.operatorTextSelected),
-                    ]}
-                  >
-                    {option}
-                  </Text>
-                </AnimatedTouchableOpacity>
-              ))}
-            </View>
+
+            {settingsTab === 'questions' ? (
+              <>
+                <Text style={[styles.settingsLabel, isDarkMode && styles.settingsLabelDark]}>operator</Text>
+                <View style={styles.operatorRow}>
+                  {operatorOptions.map((option, index) => (
+                    <AnimatedTouchableOpacity
+                      key={option}
+                      style={[
+                        styles.operatorButton,
+                        operator === option && (isDarkMode ? styles.operatorButtonSelectedDark : styles.operatorButtonSelected),
+                        { transform: [{ scale: operatorScales[index] }] },
+                      ]}
+                      onPress={() => {
+                        setOperator(option);
+                        generateProblem();
+                      }}
+                      activeOpacity={0.8}
+                    >
+                      <Text
+                        style={[
+                          styles.operatorText,
+                          operator === option && (isDarkMode ? styles.operatorTextSelectedDark : styles.operatorTextSelected),
+                        ]}
+                      >
+                        {option}
+                      </Text>
+                    </AnimatedTouchableOpacity>
+                  ))}
+                </View>
+              </>
+            ) : (
+              <>
+                <Text style={[styles.settingsLabel, isDarkMode && styles.settingsLabelDark]}>display</Text>
+                <View style={styles.operatorRow}>
+                  {themeOptions.map((option, index) => (
+                    <AnimatedTouchableOpacity
+                      key={option}
+                      style={[
+                        styles.operatorButton,
+                        theme === option && (isDarkMode ? styles.operatorButtonSelectedDark : styles.operatorButtonSelected),
+                        { transform: [{ scale: themeScales[index] }] },
+                      ]}
+                      onPress={() => setTheme(option)}
+                      activeOpacity={0.8}
+                    >
+                      <Text
+                        style={[
+                          styles.operatorText,
+                          theme === option && (isDarkMode ? styles.operatorTextSelectedDark : styles.operatorTextSelected),
+                        ]}
+                      >
+                        {option}
+                      </Text>
+                    </AnimatedTouchableOpacity>
+                  ))}
+                </View>
+              </>
+            )}
           </View>
         </View>
       )}
@@ -572,6 +597,33 @@ const styles = StyleSheet.create({
   },
   operatorTextSelectedDark: {
     color: '#f8fafc',
+  },
+  tabRow: {
+    flexDirection: 'row',
+    marginBottom: 12,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 4,
+  },
+  tabButtonSelected: {
+    backgroundColor: '#e6f2ff',
+    borderWidth: 1,
+    borderColor: '#0284c7',
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#475569',
+    textTransform: 'none',
+  },
+  tabTextSelected: {
+    color: '#0369a1',
   },
   keypadButtonDark: {
     backgroundColor: '#334155',
