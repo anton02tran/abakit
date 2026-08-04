@@ -1,6 +1,8 @@
 ﻿import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
+
 const keypadRows = [
   ['1', '2', '3'],
   ['4', '5', '6'],
@@ -24,7 +26,20 @@ export default function HomeScreen() {
   const flashAnim = useRef(new Animated.Value(0)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const textOpacity = useRef(new Animated.Value(1)).current;
-  const operatorHighlight = useRef(new Animated.Value(0)).current;
+  const operatorScales = useRef(operatorOptions.map(() => new Animated.Value(1))).current;
+
+  useEffect(() => {
+    Animated.parallel(
+      operatorScales.map((scale, index) =>
+        Animated.spring(scale, {
+          toValue: operatorOptions[index] === operator ? 1.08 : 1,
+          friction: 8,
+          tension: 120,
+          useNativeDriver: true,
+        }),
+      ),
+    ).start();
+  }, [operator, operatorScales]);
 
   const generateProblem = (keepFeedback = false) => {
     let n1 = Math.floor(Math.random() * 12) + 1;
@@ -75,16 +90,6 @@ export default function HomeScreen() {
       useNativeDriver: false,
     }).start();
   }, [displayText, textOpacity]);
-
-  useEffect(() => {
-    const currentIndex = operatorOptions.indexOf(operator);
-    Animated.timing(operatorHighlight, {
-      toValue: currentIndex * 76,
-      duration: 240,
-      easing: Easing.out(Easing.ease),
-      useNativeDriver: false,
-    }).start();
-  }, [operator, operatorHighlight]);
 
   const runShake = () => {
     shakeAnim.setValue(0);
@@ -253,16 +258,14 @@ export default function HomeScreen() {
 
             <Text style={styles.settingsLabel}>operator</Text>
             <View style={styles.operatorRow}>
-              <Animated.View
-                style={[
-                  styles.operatorHighlight,
-                  { transform: [{ translateX: operatorHighlight }] },
-                ]}
-              />
-              {operatorOptions.map((option) => (
-                <TouchableOpacity
+              {operatorOptions.map((option, index) => (
+                <AnimatedTouchableOpacity
                   key={option}
-                  style={[styles.operatorButton, styles.operatorButtonMargin]}
+                  style={[
+                    styles.operatorButton,
+                    operator === option && styles.operatorButtonSelected,
+                    { transform: [{ scale: operatorScales[index] }] },
+                  ]}
                   onPress={() => {
                     setOperator(option);
                     generateProblem();
@@ -277,7 +280,7 @@ export default function HomeScreen() {
                   >
                     {option}
                   </Text>
-                </TouchableOpacity>
+                </AnimatedTouchableOpacity>
               ))}
             </View>
           </View>
@@ -483,33 +486,21 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   operatorRow: {
+    width: 292,
+    alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
-    position: 'relative',
-  },
-  operatorHighlight: {
-    position: 'absolute',
-    width: 68,
-    height: 68,
-    borderRadius: 20,
-    backgroundColor: '#e0f2fe',
-    borderWidth: 2,
-    borderColor: '#0284c7',
-    top: -2,
-    left: 0,
-    zIndex: 0,
+    justifyContent: 'space-between',
   },
   operatorButton: {
     width: 64,
     height: 64,
     borderRadius: 18,
-    backgroundColor: 'transparent',
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#dbeafe',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 1,
-  },
-  operatorButtonMargin: {
-    marginRight: 12,
   },
   operatorButtonSelected: {
     backgroundColor: '#e0f2fe',
@@ -517,9 +508,11 @@ const styles = StyleSheet.create({
     borderColor: '#0284c7',
   },
   operatorText: {
-    fontSize: 20,
+    fontSize: 28,
+    lineHeight: 34,
     fontWeight: '800',
     color: '#1f2937',
+    textAlign: 'center',
   },
   operatorTextSelected: {
     color: '#0369a1',
