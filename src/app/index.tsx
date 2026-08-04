@@ -67,11 +67,11 @@ export default function HomeScreen() {
 
     if (parsedAnswer === num1 * num2) {
       setScore((prev) => prev + 1);
-      setFeedback('correct! 🎉');
+      setFeedback('correct!');
       setTimeout(generateProblem, 400);
     } else {
       setUserAnswer('');
-      setFeedback('try again! ❌');
+      setFeedback('try again!');
     }
   };
 
@@ -87,7 +87,7 @@ export default function HomeScreen() {
           <Text
             style={[
               styles.answerText,
-              feedback ? styles.answerFeedbackText : !userAnswer ? styles.answerPlaceholderText : null,
+              feedback ? (feedback.includes('correct') ? styles.answerCorrectText : styles.answerErrorText) : !userAnswer ? styles.answerPlaceholderText : null,
             ]}
           >
             {feedback || userAnswer || 'Answer here'}
@@ -186,9 +186,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#111827',
   },
-  answerFeedbackText: {
-    color: '#475569',
-    opacity: 0.75,
+  answerCorrectText: {
+    color: '#15803d',
+    opacity: 0.85,
+  },
+  answerErrorText: {
+    color: '#b91c1c',
+    opacity: 0.9,
   },
   answerPlaceholderText: {
     color: '#64748b',
