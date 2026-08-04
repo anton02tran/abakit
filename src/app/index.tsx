@@ -1,5 +1,5 @@
-﻿import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+﻿import React, { useEffect, useRef, useState } from 'react';
+import { Animated, Easing, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const keypadRows = [
   ['1', '2', '3'],
@@ -14,6 +14,10 @@ export default function HomeScreen() {
   const [userAnswer, setUserAnswer] = useState<string>('');
   const [score, setScore] = useState<number>(0);
   const [feedback, setFeedback] = useState<string>('');
+
+  const flashAnim = useRef(new Animated.Value(0)).current;
+  const shakeAnim = useRef(new Animated.Value(0)).current;
+  const textOpacity = useRef(new Animated.Value(1)).current;
 
   const generateProblem = (keepFeedback = false) => {
     const n1 = Math.floor(Math.random() * 12) + 1;
@@ -41,6 +45,49 @@ export default function HomeScreen() {
     return () => clearTimeout(timer);
   }, [feedback]);
 
+  const displayText = feedback || userAnswer || 'answer here';
+
+  useEffect(() => {
+    textOpacity.setValue(0);
+    Animated.timing(textOpacity, {
+      toValue: 1,
+      duration: 240,
+      easing: Easing.out(Easing.ease),
+      useNativeDriver: true,
+    }).start();
+  }, [displayText, textOpacity]);
+
+  const runShake = () => {
+    shakeAnim.setValue(0);
+    Animated.sequence([
+      Animated.timing(shakeAnim, { toValue: 4, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -4, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 2, duration: 40, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -2, duration: 40, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 0, duration: 40, useNativeDriver: true }),
+    ]).start();
+  };
+
+  const runFlash = () => {
+    flashAnim.setValue(0);
+    Animated.sequence([
+      Animated.timing(flashAnim, {
+        toValue: 1,
+        duration: 200,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: false,
+      }),
+      Animated.timing(flashAnim, {
+        toValue: 0,
+        duration: 400,
+        delay: 100,
+        useNativeDriver: false,
+      }),
+    ]).start();
+  };
+
+  const hasAnswer = userAnswer.length > 0;
+
   const appendDigit = (digit: string) => {
     setFeedback('');
     setUserAnswer((current) => {
@@ -60,10 +107,12 @@ export default function HomeScreen() {
   };
 
   const checkAnswer = () => {
-    const parsedAnswer = parseInt(userAnswer, 10);
+    if (!hasAnswer) {
+      return;
+    }
 
-    if (!userAnswer || Number.isNaN(parsedAnswer)) {
-      setFeedback('answer first');
+    const parsedAnswer = parseInt(userAnswer, 10);
+    if (Number.isNaN(parsedAnswer)) {
       return;
     }
 
@@ -71,9 +120,11 @@ export default function HomeScreen() {
       setScore((prev) => prev + 1);
       setFeedback('correct!');
       generateProblem(true);
+      runFlash();
     } else {
       setUserAnswer('');
       setFeedback('try again!');
+      runShake();
     }
   };
 
@@ -85,16 +136,34 @@ export default function HomeScreen() {
       <View style={styles.card}>
         <Text style={styles.problem}>{num1} × {num2}</Text>
 
-        <View style={styles.answerBox}>
-          <Text
+        <Animated.View
+          style={[
+            styles.answerBox,
+            {
+              transform: [{ translateX: shakeAnim }],
+              backgroundColor: flashAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: ['#eef2ff', '#dcfce7'],
+              }),
+            },
+          ]}
+        >
+          <Animated.Text
             style={[
               styles.answerText,
-              feedback ? (feedback.includes('correct') ? styles.answerCorrectText : styles.answerErrorText) : !userAnswer ? styles.answerPlaceholderText : null,
+              { opacity: textOpacity },
+              feedback
+                ? feedback.includes('correct')
+                  ? styles.answerCorrectText
+                  : styles.answerErrorText
+                : !userAnswer
+                ? styles.answerPlaceholderText
+                : null,
             ]}
           >
-            {feedback || userAnswer || 'answer here'}
-          </Text>
-        </View>
+            {displayText}
+          </Animated.Text>
+        </Animated.View>
 
         <View style={styles.keypad}>
           {keypadRows.map((row, rowIndex) => (
@@ -124,8 +193,13 @@ export default function HomeScreen() {
           ))}
         </View>
 
-        <TouchableOpacity style={styles.submitButton} onPress={checkAnswer} activeOpacity={0.85}>
-          <Text style={styles.submitText}>submit</Text>
+        <TouchableOpacity
+          style={[styles.submitButton, !hasAnswer && styles.submitButtonDisabled]}
+          onPress={checkAnswer}
+          activeOpacity={hasAnswer ? 0.85 : 1}
+          disabled={!hasAnswer}
+        >
+          <Text style={[styles.submitText, !hasAnswer && styles.submitTextDisabled]}>submit</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -243,10 +317,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  submitButtonDisabled: {
+    backgroundColor: '#cbd5e1',
+  },
   submitText: {
     color: '#ffffff',
     fontSize: 18,
     fontWeight: '800',
+  },
+  submitTextDisabled: {
+    color: '#94a3b8',
   },
   feedback: {
     marginTop: 16,
