@@ -31,6 +31,13 @@ export default function HomeScreen() {
   const [score, setScore] = useState<number>(0);
   const [feedback, setFeedback] = useState<string>('');
 
+  const [sessionActive, setSessionActive] = useState<boolean>(false);
+  const [sessionCorrect, setSessionCorrect] = useState<number>(0);
+  const [sessionTotal, setSessionTotal] = useState<number>(0);
+  const [sessionTimes, setSessionTimes] = useState<number[]>([]);
+  const [sessionSummary, setSessionSummary] = useState<{ total: number; correct: number; avgTime: number } | null>(null);
+  const [lastResult, setLastResult] = useState<'correct' | 'wrong' | null>(null);
+
   const flashAnim = useRef(new Animated.Value(0)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const textOpacity = useRef(new Animated.Value(1)).current;
@@ -39,6 +46,8 @@ export default function HomeScreen() {
   const skipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flashRunId = useRef(0);
   const [flashType, setFlashType] = useState<'correct' | 'skip'>('correct');
+  const questionStartRef = useRef<number>(Date.now());
+  const sessionCounterScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     Animated.parallel(
@@ -113,6 +122,7 @@ export default function HomeScreen() {
     if (!keepFeedback) {
       setFeedback('');
     }
+    questionStartRef.current = Date.now();
   };
 
   useEffect(() => {
@@ -133,6 +143,16 @@ export default function HomeScreen() {
 
     return () => clearTimeout(timer);
   }, [feedback]);
+
+  useEffect(() => {
+    if (!lastResult) return;
+
+    const timer = setTimeout(() => {
+      setLastResult(null);
+    }, 900);
+
+    return () => clearTimeout(timer);
+  }, [lastResult]);
 
   const displayText = feedback || userAnswer || 'answer here';
   const hasAnswer = userAnswer.length > 0;
@@ -186,70 +206,68 @@ export default function HomeScreen() {
     });
   };
 
-  const appendDigit = (digit: string) => {
-    setFeedback('');
-    setUserAnswer((current) => {
-      if (current.length >= 7) return current;
-      return `${current}${digit}`;
-    });
-  };
+  const computeAnswer = () =>
+    operator === '+' ? num1 + num2 :
+    operator === '-' ? num1 - num2 :
+    operator === '×' ? num1 * num2 :
+    num1 / num2;
 
-  const deleteDigit = () => {
-    setFeedback('');
-    setUserAnswer((current) => current.slice(0, -1));
-  };
-
-  const skipQuestion = () => {
-    const answer =
-      operator === '+' ? num1 + num2 :
-      operator === '-' ? num1 - num2 :
-      operator === '×' ? num1 * num2 :
-      num1 / num2;
-
-    setFeedback(String(answer));
-    setUserAnswer('');
-    runFlash('skip');
-    generateProblem(true);
-
-    if (skipTimer.current) {
-      clearTimeout(skipTimer.current);
+  const resolveQuestion = (isCorrect: boolean) => {
+    if (!sessionActive) return;
+    const elapsed = Date.now() - questionStartRef.current;
+    setSessionTimes((prev) => [...prev, elapsed]);
+    setSessionTotal((prev) => prev + 1);
+    if (isCorrect) {
+      setSessionCorrect((prev) => prev + 1);
     }
-    skipTimer.current = setTimeout(() => {
-      skipTimer.current = null;
-      setFeedback('');
-    }, 900);
+    setLastResult(isCorrect ? 'correct' : 'wrong');
+    sessionCounterScale.setValue(1);
+    Animated.sequence([
+      Animated.timing(sessionCounterScale, { toValue: 1.18, duration: 120, useNativeDriver: true }),
+      Animated.spring(sessionCounterScale, { toValue: 1, friction: 5, tension: 140, useNativeDriver: true }),
+    ]).start();
   };
 
-  const checkAnswer = () => {
-    if (!hasAnswer) {
+  const startSession = () => {
+    setSessionActive(true);
+    setSessionCorrect(0);
+    setSessionTotal(0);
+    setSessionTimes([]);
+    setSessionSummary(null);
+    setLastResult(null);
+    questionStartRef.current = Date.now();
+  };
+
+  const endSession = () => {
+    setSessionActive(false);
+    const total = sessionTimes.length;
+    const avgTime = total > 0 ? sessionTimes.reduce((sum, t) => sum + t, 0) / total / 1000 : 0;
+    setSessionSummary({ total: sessionTotal, correct: sessionCorrect, avgTime });
+  };
+
+  const submitAnswer = (rawAnswer: string) => {
+    if (!rawAnswer) {
       return;
     }
 
-    const parsedAnswer = parseInt(userAnswer, 10);
+    const parsedAnswer = parseInt(rawAnswer, 10);
     if (Number.isNaN(parsedAnswer)) {
       return;
     }
 
-    const correct =
-      operator === '+' ? num1 + num2 === parsedAnswer :
-      operator === '-' ? num1 - num2 === parsedAnswer :
-      operator === '×' ? num1 * num2 === parsedAnswer :
-      num1 / num2 === parsedAnswer;
+    const answer = computeAnswer();
+    const correct = answer === parsedAnswer;
 
     if (correct) {
       setScore((prev) => prev + 1);
       setFeedback('correct!');
+      resolveQuestion(true);
       generateProblem(true);
       runFlash();
     } else if (skipMode) {
-      const answer =
-        operator === '+' ? num1 + num2 :
-        operator === '-' ? num1 - num2 :
-        operator === '×' ? num1 * num2 :
-        num1 / num2;
-
       setFeedback(String(answer));
       setUserAnswer('');
+      resolveQuestion(false);
       runFlash('skip');
       generateProblem(true);
 
@@ -267,6 +285,51 @@ export default function HomeScreen() {
     }
   };
 
+  const appendDigit = (digit: string) => {
+    if (userAnswer.length >= 7) return;
+
+    setFeedback('');
+    const next = `${userAnswer}${digit}`;
+    setUserAnswer(next);
+
+    if (quickMode) {
+      const answerDigits = String(computeAnswer()).length;
+      if (next.length >= answerDigits) {
+        submitAnswer(next);
+      }
+    }
+  };
+
+  const deleteDigit = () => {
+    setFeedback('');
+    setUserAnswer((current) => current.slice(0, -1));
+  };
+
+  const skipQuestion = () => {
+    const answer = computeAnswer();
+
+    setFeedback(String(answer));
+    setUserAnswer('');
+    resolveQuestion(false);
+    runFlash('skip');
+    generateProblem(true);
+
+    if (skipTimer.current) {
+      clearTimeout(skipTimer.current);
+    }
+    skipTimer.current = setTimeout(() => {
+      skipTimer.current = null;
+      setFeedback('');
+    }, 900);
+  };
+
+  const checkAnswer = () => {
+    if (!hasAnswer) {
+      return;
+    }
+    submitAnswer(userAnswer);
+  };
+
   return (
     <View style={[styles.container, isDarkMode && styles.containerDark]}>
       <View style={styles.headerRow}>
@@ -276,6 +339,39 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
       <Text style={[styles.score, isDarkMode && styles.scoreDark]}>score: {score}</Text>
+
+      <View style={styles.sessionRow}>
+        {sessionActive ? (
+          <>
+            <Animated.Text
+              style={[
+                styles.sessionCounter,
+                isDarkMode && styles.sessionCounterDark,
+                lastResult === 'correct' && (isDarkMode ? styles.sessionCounterCorrectDark : styles.sessionCounterCorrect),
+                lastResult === 'wrong' && (isDarkMode ? styles.sessionCounterWrongDark : styles.sessionCounterWrong),
+                { transform: [{ scale: sessionCounterScale }] },
+              ]}
+            >
+              {sessionCorrect}/{sessionTotal}
+            </Animated.Text>
+            <TouchableOpacity
+              style={[styles.sessionButton, styles.sessionButtonEnd, isDarkMode && styles.sessionButtonEndDark]}
+              onPress={endSession}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.sessionButtonText}>end session</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <TouchableOpacity
+            style={[styles.sessionButton, styles.sessionButtonStart, isDarkMode && styles.sessionButtonStartDark]}
+            onPress={startSession}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.sessionButtonText}>start session</Text>
+          </TouchableOpacity>
+        )}
+      </View>
 
       <View style={[styles.card, isDarkMode && styles.cardDark]}>
         <Text style={[styles.problem, isDarkMode && styles.problemDark]}>{num1} {operator} {num2}</Text>
@@ -501,7 +597,12 @@ export default function HomeScreen() {
             ) : settingsTab === 'pace' ? (
               <>
                 <View style={styles.toggleSection}>
-                  <Text style={[styles.settingsLabel, isDarkMode && styles.settingsLabelDark]}>quick mode</Text>
+                  <View>
+                    <Text style={[styles.settingsLabel, isDarkMode && styles.settingsLabelDark]}>quick mode</Text>
+                    <Text style={[styles.toggleDescription, isDarkMode && styles.toggleDescriptionDark]}>
+                      Auto-submits as soon as your answer reaches the correct number of digits.
+                    </Text>
+                  </View>
                   <TouchableOpacity
                     style={[
                       styles.toggleSwitch,
@@ -564,6 +665,44 @@ export default function HomeScreen() {
                 </View>
               </>
             )}
+          </View>
+        </View>
+      )}
+
+      {sessionSummary && (
+        <View style={styles.settingsOverlay}>
+          <View style={[styles.settingsCard, styles.summaryCard, isDarkMode && styles.settingsCardDark]}>
+            <View style={styles.settingsHeader}>
+              <Text style={[styles.settingsTitle, isDarkMode && styles.settingsTitleDark]}>session summary</Text>
+              <TouchableOpacity
+                style={[
+                  styles.closeButton,
+                  styles.closeButtonBorder,
+                  isDarkMode && styles.closeButtonBorderDark,
+                ]}
+                onPress={() => setSessionSummary(null)}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.closeText, isDarkMode && styles.closeTextDark]}>close</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={[styles.summaryRow, isDarkMode && styles.summaryRowDark]}>
+              <Text style={[styles.summaryLabel, isDarkMode && styles.summaryLabelDark]}>questions</Text>
+              <Text style={[styles.summaryValue, isDarkMode && styles.summaryValueDark]}>{sessionSummary.total}</Text>
+            </View>
+            <View style={[styles.summaryRow, isDarkMode && styles.summaryRowDark]}>
+              <Text style={[styles.summaryLabel, isDarkMode && styles.summaryLabelDark]}>correct</Text>
+              <Text style={[styles.summaryValue, isDarkMode ? styles.summaryValueCorrectDark : styles.summaryValueCorrect]}>
+                {sessionSummary.correct}/{sessionSummary.total}
+              </Text>
+            </View>
+            <View style={[styles.summaryRow, styles.summaryRowLast]}>
+              <Text style={[styles.summaryLabel, isDarkMode && styles.summaryLabelDark]}>avg time / question</Text>
+              <Text style={[styles.summaryValue, isDarkMode && styles.summaryValueDark]}>
+                {sessionSummary.total > 0 ? `${sessionSummary.avgTime.toFixed(2)}s` : '—'}
+              </Text>
+            </View>
           </View>
         </View>
       )}
@@ -1042,5 +1181,98 @@ const styles = StyleSheet.create({
   },
   titleDark: {
     color: '#f8fafc',
+  },
+  sessionRow: {
+    width: '100%',
+    maxWidth: 460,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  sessionButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 22,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sessionButtonStart: {
+    backgroundColor: '#2563eb',
+  },
+  sessionButtonStartDark: {
+    backgroundColor: '#3b82f6',
+  },
+  sessionButtonEnd: {
+    backgroundColor: '#ef4444',
+  },
+  sessionButtonEndDark: {
+    backgroundColor: '#dc2626',
+  },
+  sessionButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  sessionCounter: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#475569',
+    marginRight: 14,
+  },
+  sessionCounterDark: {
+    color: '#cbd5e1',
+  },
+  sessionCounterCorrect: {
+    color: '#16a34a',
+  },
+  sessionCounterCorrectDark: {
+    color: '#4ade80',
+  },
+  sessionCounterWrong: {
+    color: '#dc2626',
+  },
+  sessionCounterWrongDark: {
+    color: '#f87171',
+  },
+  summaryCard: {
+    maxWidth: 360,
+  },
+  summaryRow: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+  },
+  summaryRowDark: {
+    borderBottomColor: '#334155',
+  },
+  summaryRowLast: {
+    borderBottomWidth: 0,
+  },
+  summaryLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  summaryLabelDark: {
+    color: '#94a3b8',
+  },
+  summaryValue: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#111827',
+  },
+  summaryValueDark: {
+    color: '#f8fafc',
+  },
+  summaryValueCorrect: {
+    color: '#16a34a',
+  },
+  summaryValueCorrectDark: {
+    color: '#4ade80',
   },
 });
