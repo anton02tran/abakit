@@ -367,6 +367,7 @@ export default function HomeScreen() {
                       key={option}
                       style={[
                         styles.operatorButton,
+                        isDarkMode && styles.operatorButtonDark,
                         operator === option && (isDarkMode ? styles.operatorButtonSelectedDark : styles.operatorButtonSelected),
                         { transform: [{ scale: operatorScales[index] }] },
                       ]}
@@ -379,6 +380,7 @@ export default function HomeScreen() {
                       <Text
                         style={[
                           styles.operatorText,
+                          isDarkMode && styles.operatorTextDark,
                           operator === option && (isDarkMode ? styles.operatorTextSelectedDark : styles.operatorTextSelected),
                         ]}
                       >
@@ -435,6 +437,7 @@ export default function HomeScreen() {
                       key={option}
                       style={[
                         styles.operatorButton,
+                        isDarkMode && styles.operatorButtonDark,
                         theme === option && (isDarkMode ? styles.operatorButtonSelectedDark : styles.operatorButtonSelected),
                         { transform: [{ scale: themeScales[index] }] },
                       ]}
@@ -444,6 +447,7 @@ export default function HomeScreen() {
                       <Text
                         style={[
                           styles.operatorText,
+                          isDarkMode && styles.operatorTextDark,
                           theme === option && (isDarkMode ? styles.operatorTextSelectedDark : styles.operatorTextSelected),
                         ]}
                       >
@@ -691,12 +695,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#0369a1',
     borderColor: '#38bdf8',
   },
+  operatorButtonDark: {
+    backgroundColor: '#0b1220',
+    borderColor: '#334155',
+  },
   operatorText: {
     fontSize: 28,
     lineHeight: 34,
     fontWeight: '800',
     color: '#1f2937',
     textAlign: 'center',
+  },
+  operatorTextDark: {
+    color: '#cbd5e1',
   },
   operatorTextSelected: {
     color: '#0369a1',
