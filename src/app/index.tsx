@@ -53,7 +53,7 @@ export default function HomeScreen() {
       toValue: 1,
       duration: 240,
       easing: Easing.out(Easing.ease),
-      useNativeDriver: true,
+      useNativeDriver: false,
     }).start();
   }, [displayText, textOpacity]);
 
