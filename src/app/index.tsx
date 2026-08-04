@@ -29,7 +29,18 @@ export default function HomeScreen() {
     generateProblem();
   }, []);
 
+  useEffect(() => {
+    if (!feedback) return;
+
+    const timer = setTimeout(() => {
+      setFeedback('');
+    }, 1200);
+
+    return () => clearTimeout(timer);
+  }, [feedback]);
+
   const appendDigit = (digit: string) => {
+    setFeedback('');
     setUserAnswer((current) => {
       if (current.length >= 4) return current;
       return `${current}${digit}`;
@@ -37,10 +48,12 @@ export default function HomeScreen() {
   };
 
   const deleteDigit = () => {
+    setFeedback('');
     setUserAnswer((current) => current.slice(0, -1));
   };
 
   const clearAnswer = () => {
+    setFeedback('');
     setUserAnswer('');
   };
 
@@ -48,29 +61,37 @@ export default function HomeScreen() {
     const parsedAnswer = parseInt(userAnswer, 10);
 
     if (!userAnswer || Number.isNaN(parsedAnswer)) {
-      setFeedback('Enter an answer first');
+      setFeedback('Answer first');
       return;
     }
 
     if (parsedAnswer === num1 * num2) {
       setScore((prev) => prev + 1);
-      setFeedback('Correct! 🎉');
+      setFeedback('correct! 🎉');
       setTimeout(generateProblem, 400);
     } else {
-      setFeedback('Try again! ❌');
+      setUserAnswer('');
+      setFeedback('try again! ❌');
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Abakit</Text>
-      <Text style={styles.score}>Score: {score}</Text>
+      <Text style={styles.title}>abakit</Text>
+      <Text style={styles.score}>score: {score}</Text>
 
       <View style={styles.card}>
         <Text style={styles.problem}>{num1} × {num2}</Text>
 
         <View style={styles.answerBox}>
-          <Text style={styles.answerText}>{userAnswer || 'Tap numbers below'}</Text>
+          <Text
+            style={[
+              styles.answerText,
+              feedback ? styles.answerFeedbackText : !userAnswer ? styles.answerPlaceholderText : null,
+            ]}
+          >
+            {feedback || userAnswer || 'Answer here'}
+          </Text>
         </View>
 
         <View style={styles.keypad}>
@@ -78,7 +99,7 @@ export default function HomeScreen() {
             <View key={rowIndex} style={styles.keypadRow}>
               {row.map((key) => {
                 const isFunction = key === 'clear' || key === 'delete';
-                const label = key === 'delete' ? '⌫' : key === 'clear' ? 'Clear' : key;
+                const label = key === 'delete' ? '⌫' : key === 'clear' ? 'clear' : key;
 
                 return (
                   <TouchableOpacity
@@ -102,10 +123,8 @@ export default function HomeScreen() {
         </View>
 
         <TouchableOpacity style={styles.submitButton} onPress={checkAnswer} activeOpacity={0.85}>
-          <Text style={styles.submitText}>Submit</Text>
+          <Text style={styles.submitText}>submit</Text>
         </TouchableOpacity>
-
-        {feedback !== '' && <Text style={styles.feedback}>{feedback}</Text>}
       </View>
     </View>
   );
@@ -166,6 +185,14 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '700',
     color: '#111827',
+  },
+  answerFeedbackText: {
+    color: '#475569',
+    opacity: 0.75,
+  },
+  answerPlaceholderText: {
+    color: '#64748b',
+    opacity: 0.75,
   },
   keypad: {
     width: '100%',
