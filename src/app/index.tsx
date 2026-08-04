@@ -8,9 +8,15 @@ const keypadRows = [
   ['clear', '0', 'delete'],
 ];
 
+const operatorOptions = ['+', '-', '×', '÷'] as const;
+
+type Operator = (typeof operatorOptions)[number];
+
 export default function HomeScreen() {
   const [num1, setNum1] = useState<number>(0);
   const [num2, setNum2] = useState<number>(0);
+  const [operator, setOperator] = useState<Operator>('×');
+  const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
   const [userAnswer, setUserAnswer] = useState<string>('');
   const [score, setScore] = useState<number>(0);
   const [feedback, setFeedback] = useState<string>('');
@@ -20,8 +26,19 @@ export default function HomeScreen() {
   const textOpacity = useRef(new Animated.Value(1)).current;
 
   const generateProblem = (keepFeedback = false) => {
-    const n1 = Math.floor(Math.random() * 12) + 1;
-    const n2 = Math.floor(Math.random() * 12) + 1;
+    let n1 = Math.floor(Math.random() * 12) + 1;
+    let n2 = Math.floor(Math.random() * 12) + 1;
+
+    if (operator === '-') {
+      if (n2 > n1) [n1, n2] = [n2, n1];
+    }
+
+    if (operator === '÷') {
+      const divisor = Math.floor(Math.random() * 12) + 1;
+      const quotient = Math.floor(Math.random() * 12) + 1;
+      n1 = divisor * quotient;
+      n2 = divisor;
+    }
 
     setNum1(n1);
     setNum2(n2);
@@ -46,6 +63,7 @@ export default function HomeScreen() {
   }, [feedback]);
 
   const displayText = feedback || userAnswer || 'answer here';
+  const hasAnswer = userAnswer.length > 0;
 
   useEffect(() => {
     textOpacity.setValue(0);
@@ -60,11 +78,11 @@ export default function HomeScreen() {
   const runShake = () => {
     shakeAnim.setValue(0);
     Animated.sequence([
-      Animated.timing(shakeAnim, { toValue: 4, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: -4, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 2, duration: 40, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: -2, duration: 40, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 0, duration: 40, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 4, duration: 50, useNativeDriver: false }),
+      Animated.timing(shakeAnim, { toValue: -4, duration: 50, useNativeDriver: false }),
+      Animated.timing(shakeAnim, { toValue: 2, duration: 40, useNativeDriver: false }),
+      Animated.timing(shakeAnim, { toValue: -2, duration: 40, useNativeDriver: false }),
+      Animated.timing(shakeAnim, { toValue: 0, duration: 40, useNativeDriver: false }),
     ]).start();
   };
 
@@ -85,8 +103,6 @@ export default function HomeScreen() {
       }),
     ]).start();
   };
-
-  const hasAnswer = userAnswer.length > 0;
 
   const appendDigit = (digit: string) => {
     setFeedback('');
@@ -116,7 +132,13 @@ export default function HomeScreen() {
       return;
     }
 
-    if (parsedAnswer === num1 * num2) {
+    const correct =
+      operator === '+' ? num1 + num2 === parsedAnswer :
+      operator === '-' ? num1 - num2 === parsedAnswer :
+      operator === '×' ? num1 * num2 === parsedAnswer :
+      num1 / num2 === parsedAnswer;
+
+    if (correct) {
       setScore((prev) => prev + 1);
       setFeedback('correct!');
       generateProblem(true);
@@ -130,11 +152,16 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>abakit</Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.title}>abakit</Text>
+        <TouchableOpacity style={styles.settingsButton} onPress={() => setSettingsOpen(true)} activeOpacity={0.8}>
+          <Text style={styles.settingsButtonText}>settings</Text>
+        </TouchableOpacity>
+      </View>
       <Text style={styles.score}>score: {score}</Text>
 
       <View style={styles.card}>
-        <Text style={styles.problem}>{num1} × {num2}</Text>
+        <Text style={styles.problem}>{num1} {operator} {num2}</Text>
 
         <Animated.View
           style={[
@@ -202,6 +229,46 @@ export default function HomeScreen() {
           <Text style={[styles.submitText, !hasAnswer && styles.submitTextDisabled]}>submit</Text>
         </TouchableOpacity>
       </View>
+
+      {settingsOpen && (
+        <View style={styles.settingsOverlay}>
+          <View style={styles.settingsCard}>
+            <View style={styles.settingsHeader}>
+              <Text style={styles.settingsTitle}>settings</Text>
+              <TouchableOpacity style={styles.closeButton} onPress={() => setSettingsOpen(false)} activeOpacity={0.8}>
+                <Text style={styles.closeText}>close</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.settingsLabel}>operator</Text>
+            <View style={styles.operatorRow}>
+              {operatorOptions.map((option) => (
+                <TouchableOpacity
+                  key={option}
+                  style={[
+                    styles.operatorButton,
+                    operator === option && styles.operatorButtonSelected,
+                  ]}
+                  onPress={() => {
+                    setOperator(option);
+                    generateProblem();
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[
+                      styles.operatorText,
+                      operator === option && styles.operatorTextSelected,
+                    ]}
+                  >
+                    {option}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -333,5 +400,98 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#333',
+  },
+  headerRow: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  settingsButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    backgroundColor: '#e2e8f0',
+  },
+  settingsButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1e293b',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  settingsOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  settingsCard: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: '#ffffff',
+    borderRadius: 24,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOpacity: 0.14,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 8,
+  },
+  settingsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 18,
+  },
+  settingsTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#111827',
+  },
+  closeButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  closeText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#334155',
+  },
+  settingsLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#475569',
+    marginBottom: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  operatorRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  operatorButton: {
+    width: 64,
+    height: 64,
+    borderRadius: 18,
+    backgroundColor: '#f8fafc',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  operatorButtonSelected: {
+    backgroundColor: '#e0f2fe',
+    borderWidth: 2,
+    borderColor: '#0284c7',
+  },
+  operatorText: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1f2937',
+  },
+  operatorTextSelected: {
+    color: '#0369a1',
   },
 });
