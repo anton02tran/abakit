@@ -11,13 +11,17 @@ const keypadRows = [
 ];
 
 const operatorOptions = ['+', '-', '×', '÷'] as const;
+const themeOptions = ['light', 'dark'] as const;
+const themeIcons = { light: '☀️', dark: '🌙' } as const;
 
 type Operator = (typeof operatorOptions)[number];
+type ThemeMode = (typeof themeOptions)[number];
 
 export default function HomeScreen() {
   const [num1, setNum1] = useState<number>(0);
   const [num2, setNum2] = useState<number>(0);
   const [operator, setOperator] = useState<Operator>('×');
+  const [theme, setTheme] = useState<ThemeMode>('light');
   const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
   const [userAnswer, setUserAnswer] = useState<string>('');
   const [score, setScore] = useState<number>(0);
@@ -80,6 +84,7 @@ export default function HomeScreen() {
 
   const displayText = feedback || userAnswer || 'answer here';
   const hasAnswer = userAnswer.length > 0;
+  const isDarkMode = theme === 'dark';
 
   useEffect(() => {
     textOpacity.setValue(0);
@@ -167,26 +172,27 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isDarkMode && styles.containerDark]}>
       <View style={styles.headerRow}>
         <Text style={styles.title}>abakit</Text>
         <TouchableOpacity style={styles.settingsButton} onPress={() => setSettingsOpen(true)} activeOpacity={0.8}>
           <Text style={styles.settingsButtonText}>settings</Text>
         </TouchableOpacity>
       </View>
-      <Text style={styles.score}>score: {score}</Text>
+      <Text style={[styles.score, isDarkMode && styles.scoreDark]}>score: {score}</Text>
 
-      <View style={styles.card}>
-        <Text style={styles.problem}>{num1} {operator} {num2}</Text>
+      <View style={[styles.card, isDarkMode && styles.cardDark]}>
+        <Text style={[styles.problem, isDarkMode && styles.problemDark]}>{num1} {operator} {num2}</Text>
 
         <Animated.View
           style={[
             styles.answerBox,
+            isDarkMode && styles.answerBoxDark,
             {
               transform: [{ translateX: shakeAnim }],
               backgroundColor: flashAnim.interpolate({
                 inputRange: [0, 1],
-                outputRange: ['#eef2ff', '#dcfce7'],
+                outputRange: isDarkMode ? ['#111827', '#1d2939'] : ['#eef2ff', '#dcfce7'],
               }),
             },
           ]}
@@ -250,13 +256,13 @@ export default function HomeScreen() {
         <View style={styles.settingsOverlay}>
           <View style={styles.settingsCard}>
             <View style={styles.settingsHeader}>
-              <Text style={styles.settingsTitle}>settings</Text>
+              <Text style={[styles.settingsTitle, isDarkMode && styles.settingsTitleDark]}>settings</Text>
               <TouchableOpacity style={styles.closeButton} onPress={() => setSettingsOpen(false)} activeOpacity={0.8}>
                 <Text style={styles.closeText}>close</Text>
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.settingsLabel}>operator</Text>
+            <Text style={[styles.settingsLabel, isDarkMode && styles.settingsLabelDark]}>operator</Text>
             <View style={styles.operatorRow}>
               {operatorOptions.map((option, index) => (
                 <AnimatedTouchableOpacity
@@ -281,6 +287,32 @@ export default function HomeScreen() {
                     {option}
                   </Text>
                 </AnimatedTouchableOpacity>
+              ))}
+            </View>
+            <Text style={[styles.settingsLabel, isDarkMode && styles.settingsLabelDark]}>personalization</Text>
+            <View style={styles.operatorRow}>
+              {themeOptions.map((option) => (
+                <TouchableOpacity
+                  key={option}
+                  style={[
+                    styles.operatorButton,
+                    theme === option && styles.operatorButtonSelected,
+                  ]}
+                  onPress={() => setTheme(option)}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[
+                      styles.operatorText,
+                      theme === option && styles.operatorTextSelected,
+                    ]}
+                  >
+                    {themeIcons[option]}
+                  </Text>
+                  <Text style={[styles.themeLabel, isDarkMode && styles.themeLabelDark]}>
+                    {option}
+                  </Text>
+                </TouchableOpacity>
               ))}
             </View>
           </View>
@@ -516,5 +548,35 @@ const styles = StyleSheet.create({
   },
   operatorTextSelected: {
     color: '#0369a1',
+  },
+  themeLabel: {
+    fontSize: 12,
+    marginTop: 4,
+    color: '#475569',
+    textTransform: 'capitalize',
+  },
+  themeLabelDark: {
+    color: '#cbd5e1',
+  },
+  containerDark: {
+    backgroundColor: '#0f172a',
+  },
+  cardDark: {
+    backgroundColor: '#111827',
+  },
+  scoreDark: {
+    color: '#cbd5e1',
+  },
+  problemDark: {
+    color: '#f8fafc',
+  },
+  answerBoxDark: {
+    borderColor: '#334155',
+  },
+  settingsTitleDark: {
+    color: '#f8fafc',
+  },
+  settingsLabelDark: {
+    color: '#94a3b8',
   },
 });
