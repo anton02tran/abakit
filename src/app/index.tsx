@@ -23,8 +23,10 @@ export default function HomeScreen() {
   const [theme, setTheme] = useState<ThemeMode>('light');
   const [leftSize, setLeftSize] = useState<number>(1);
   const [rightSize, setRightSize] = useState<number>(1);
-  const [settingsTab, setSettingsTab] = useState<'questions' | 'personalization'>('questions');
+  const [settingsTab, setSettingsTab] = useState<'questions' | 'personalization' | 'pace'>('questions');
   const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
+  const [quickMode, setQuickMode] = useState<boolean>(false);
+  const [skipMode, setSkipMode] = useState<boolean>(false);
   const [userAnswer, setUserAnswer] = useState<string>('');
   const [score, setScore] = useState<number>(0);
   const [feedback, setFeedback] = useState<string>('');
@@ -354,6 +356,21 @@ export default function HomeScreen() {
                   settingsTab === 'personalization' && (isDarkMode ? styles.tabTextSelectedDark : styles.tabTextSelected),
                 ]}>personalization</Text>
               </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.tabButton,
+                  settingsTab === 'pace' && (isDarkMode ? styles.tabButtonSelectedDark : styles.tabButtonSelected),
+                  isDarkMode && styles.tabButtonDark,
+                ]}
+                onPress={() => setSettingsTab('pace')}
+                activeOpacity={0.85}
+              >
+                <Text style={[
+                  styles.tabText,
+                  isDarkMode ? styles.tabTextDark : null,
+                  settingsTab === 'pace' && (isDarkMode ? styles.tabTextSelectedDark : styles.tabTextSelected),
+                ]}>pace</Text>
+              </TouchableOpacity>
             </View>
 
             <View style={[styles.tabDivider, isDarkMode && styles.tabDividerDark]} />
@@ -426,6 +443,37 @@ export default function HomeScreen() {
                       <Text style={[styles.arrowText, isDarkMode && styles.arrowTextDark]}>▼</Text>
                     </TouchableOpacity>
                   </View>
+                </View>
+              </>
+            ) : settingsTab === 'pace' ? (
+              <>
+                <View style={styles.toggleSection}>
+                  <Text style={[styles.settingsLabel, isDarkMode && styles.settingsLabelDark]}>quick mode</Text>
+                  <TouchableOpacity
+                    style={[
+                      styles.toggleSwitch,
+                      quickMode ? styles.toggleSwitchOn : styles.toggleSwitchOff,
+                      isDarkMode && (quickMode ? styles.toggleSwitchOnDark : styles.toggleSwitchOffDark),
+                    ]}
+                    onPress={() => setQuickMode((current) => !current)}
+                    activeOpacity={0.8}
+                  >
+                    <View style={[styles.toggleThumb, quickMode && styles.toggleThumbOn, isDarkMode && styles.toggleThumbDark]} />
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.toggleSection}>
+                  <Text style={[styles.settingsLabel, isDarkMode && styles.settingsLabelDark]}>skip mode</Text>
+                  <TouchableOpacity
+                    style={[
+                      styles.toggleSwitch,
+                      skipMode ? styles.toggleSwitchOn : styles.toggleSwitchOff,
+                      isDarkMode && (skipMode ? styles.toggleSwitchOnDark : styles.toggleSwitchOffDark),
+                    ]}
+                    onPress={() => setSkipMode((current) => !current)}
+                    activeOpacity={0.8}
+                  >
+                    <View style={[styles.toggleThumb, skipMode && styles.toggleThumbOn, isDarkMode && styles.toggleThumbDark]} />
+                  </TouchableOpacity>
                 </View>
               </>
             ) : (
@@ -880,6 +928,47 @@ const styles = StyleSheet.create({
   },
   sizeTextDark: {
     color: '#f8fafc',
+  },
+  toggleSection: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+  },
+  toggleSwitch: {
+    width: 52,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    padding: 4,
+  },
+  toggleSwitchOn: {
+    backgroundColor: '#10b981',
+  },
+  toggleSwitchOff: {
+    backgroundColor: '#cbd5e1',
+  },
+  toggleSwitchOnDark: {
+    backgroundColor: '#22c55e',
+  },
+  toggleSwitchOffDark: {
+    backgroundColor: '#334155',
+  },
+  toggleThumb: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#ffffff',
+    alignSelf: 'flex-start',
+  },
+  toggleThumbOn: {
+    alignSelf: 'flex-end',
+  },
+  toggleThumbDark: {
+    backgroundColor: '#e2e8f0',
   },
   answerTextDark: {
     color: '#f8fafc',
