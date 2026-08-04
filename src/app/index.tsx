@@ -21,6 +21,8 @@ export default function HomeScreen() {
   const [num2, setNum2] = useState<number>(0);
   const [operator, setOperator] = useState<Operator>('×');
   const [theme, setTheme] = useState<ThemeMode>('light');
+  const [leftSize, setLeftSize] = useState<number>(1);
+  const [rightSize, setRightSize] = useState<number>(1);
   const [settingsTab, setSettingsTab] = useState<'questions' | 'personalization'>('questions');
   const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
   const [userAnswer, setUserAnswer] = useState<string>('');
@@ -60,18 +62,44 @@ export default function HomeScreen() {
   }, [theme, themeScales]);
 
   const generateProblem = (keepFeedback = false) => {
-    let n1 = Math.floor(Math.random() * 12) + 1;
-    let n2 = Math.floor(Math.random() * 12) + 1;
+    const randInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+    const minForDigits = (d: number) => (d === 1 ? 1 : Math.pow(10, d - 1));
+    const maxForDigits = (d: number) => Math.pow(10, d) - 1;
+
+    const min1 = minForDigits(leftSize);
+    const max1 = maxForDigits(leftSize);
+    const min2 = minForDigits(rightSize);
+    const max2 = maxForDigits(rightSize);
+
+    let n1 = randInt(min1, max1);
+    let n2 = randInt(min2, max2);
 
     if (operator === '-') {
+      // ensure non-negative result by swapping when needed
       if (n2 > n1) [n1, n2] = [n2, n1];
     }
 
     if (operator === '÷') {
-      const divisor = Math.floor(Math.random() * 12) + 1;
-      const quotient = Math.floor(Math.random() * 12) + 1;
-      n1 = divisor * quotient;
-      n2 = divisor;
+      // Try to create a dividend n1 with leftSize digits that's divisible by n2 (rightSize digits)
+      let attempts = 0;
+      let found = false;
+      while (attempts < 40 && !found) {
+        n2 = randInt(min2, max2);
+        const minQ = Math.ceil(min1 / n2);
+        const maxQ = Math.floor(max1 / n2);
+        if (maxQ >= Math.max(1, minQ)) {
+          const q = randInt(Math.max(1, minQ), maxQ);
+          n1 = n2 * q;
+          found = true;
+          break;
+        }
+        attempts += 1;
+      }
+      if (!found) {
+        // fallback: pick divisor 1 and random dividend in range
+        n2 = 1;
+        n1 = randInt(min1, max1);
+      }
     }
 
     setNum1(n1);
@@ -85,6 +113,11 @@ export default function HomeScreen() {
   useEffect(() => {
     generateProblem();
   }, []);
+
+  useEffect(() => {
+    // regenerate when digit sizes change
+    generateProblem();
+  }, [leftSize, rightSize]);
 
   useEffect(() => {
     if (!feedback) return;
@@ -142,7 +175,7 @@ export default function HomeScreen() {
   const appendDigit = (digit: string) => {
     setFeedback('');
     setUserAnswer((current) => {
-      if (current.length >= 4) return current;
+      if (current.length >= 7) return current;
       return `${current}${digit}`;
     });
   };
@@ -353,6 +386,44 @@ export default function HomeScreen() {
                       </Text>
                     </AnimatedTouchableOpacity>
                   ))}
+                </View>
+                <Text style={[styles.settingsLabel, isDarkMode && styles.settingsLabelDark]}>number size</Text>
+                <View style={styles.sizeRow}>
+                  <View style={[styles.sizeBox, isDarkMode && styles.sizeBoxDark]}>
+                    <TouchableOpacity
+                      style={[styles.arrowButton, isDarkMode && styles.arrowButtonDark]}
+                      onPress={() => setLeftSize((s) => Math.min(3, s + 1))}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[styles.arrowText, isDarkMode && styles.arrowTextDark]}>▲</Text>
+                    </TouchableOpacity>
+                    <Text style={[styles.sizeText, isDarkMode && styles.sizeTextDark]}>{leftSize}</Text>
+                    <TouchableOpacity
+                      style={[styles.arrowButton, isDarkMode && styles.arrowButtonDark]}
+                      onPress={() => setLeftSize((s) => Math.max(1, s - 1))}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[styles.arrowText, isDarkMode && styles.arrowTextDark]}>▼</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={[styles.sizeBox, isDarkMode && styles.sizeBoxDark]}>
+                    <TouchableOpacity
+                      style={[styles.arrowButton, isDarkMode && styles.arrowButtonDark]}
+                      onPress={() => setRightSize((s) => Math.min(3, s + 1))}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[styles.arrowText, isDarkMode && styles.arrowTextDark]}>▲</Text>
+                    </TouchableOpacity>
+                    <Text style={[styles.sizeText, isDarkMode && styles.sizeTextDark]}>{rightSize}</Text>
+                    <TouchableOpacity
+                      style={[styles.arrowButton, isDarkMode && styles.arrowButtonDark]}
+                      onPress={() => setRightSize((s) => Math.max(1, s - 1))}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[styles.arrowText, isDarkMode && styles.arrowTextDark]}>▼</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </>
             ) : (
@@ -750,6 +821,53 @@ const styles = StyleSheet.create({
     backgroundColor: '#1e293b',
   },
   closeTextDark: {
+    color: '#f8fafc',
+  },
+  sizeRow: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  sizeBox: {
+    flex: 1,
+    minWidth: 110,
+    height: 72,
+    borderRadius: 12,
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 4,
+    flexDirection: 'row',
+  },
+  sizeBoxDark: {
+    backgroundColor: '#0f1724',
+    borderColor: '#334155',
+  },
+  arrowButton: {
+    padding: 8,
+    marginHorizontal: 6,
+  },
+  arrowButtonDark: {
+    padding: 8,
+    marginHorizontal: 6,
+  },
+  arrowText: {
+    fontSize: 16,
+    color: '#1f2937',
+    fontWeight: '800',
+  },
+  arrowTextDark: {
+    color: '#f8fafc',
+  },
+  sizeText: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#0f1724',
+  },
+  sizeTextDark: {
     color: '#f8fafc',
   },
   answerTextDark: {
