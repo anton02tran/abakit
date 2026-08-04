@@ -12,7 +12,6 @@ const keypadRows = [
 
 const operatorOptions = ['+', '-', '×', '÷'] as const;
 const themeOptions = ['light', 'dark'] as const;
-const themeIcons = { light: '☀️', dark: '🌙' } as const;
 
 type Operator = (typeof operatorOptions)[number];
 type ThemeMode = (typeof themeOptions)[number];
@@ -31,6 +30,7 @@ export default function HomeScreen() {
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const textOpacity = useRef(new Animated.Value(1)).current;
   const operatorScales = useRef(operatorOptions.map(() => new Animated.Value(1))).current;
+  const themeScales = useRef(themeOptions.map(() => new Animated.Value(1))).current;
 
   useEffect(() => {
     Animated.parallel(
@@ -44,6 +44,19 @@ export default function HomeScreen() {
       ),
     ).start();
   }, [operator, operatorScales]);
+
+  useEffect(() => {
+    Animated.parallel(
+      themeScales.map((scale, index) =>
+        Animated.spring(scale, {
+          toValue: themeOptions[index] === theme ? 1.06 : 1,
+          friction: 8,
+          tension: 120,
+          useNativeDriver: true,
+        }),
+      ),
+    ).start();
+  }, [theme, themeScales]);
 
   const generateProblem = (keepFeedback = false) => {
     let n1 = Math.floor(Math.random() * 12) + 1;
@@ -297,12 +310,13 @@ export default function HomeScreen() {
             </View>
             <Text style={[styles.settingsLabel, isDarkMode && styles.settingsLabelDark]}>personalization</Text>
             <View style={styles.operatorRow}>
-              {themeOptions.map((option) => (
-                <TouchableOpacity
+              {themeOptions.map((option, index) => (
+                <AnimatedTouchableOpacity
                   key={option}
                   style={[
                     styles.operatorButton,
                     theme === option && (isDarkMode ? styles.operatorButtonSelectedDark : styles.operatorButtonSelected),
+                    { transform: [{ scale: themeScales[index] }] },
                   ]}
                   onPress={() => setTheme(option)}
                   activeOpacity={0.8}
@@ -313,12 +327,9 @@ export default function HomeScreen() {
                       theme === option && (isDarkMode ? styles.operatorTextSelectedDark : styles.operatorTextSelected),
                     ]}
                   >
-                    {themeIcons[option]}
-                  </Text>
-                  <Text style={[styles.themeLabel, isDarkMode && styles.themeLabelDark]}>
                     {option}
                   </Text>
-                </TouchableOpacity>
+                </AnimatedTouchableOpacity>
               ))}
             </View>
           </View>
@@ -473,7 +484,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#1e293b',
-    textTransform: 'uppercase',
+    textTransform: 'none',
     letterSpacing: 0.5,
   },
   settingsOverlay: {
@@ -520,7 +531,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#475569',
     marginBottom: 12,
-    textTransform: 'uppercase',
+    textTransform: 'none',
     letterSpacing: 1,
   },
   operatorRow: {
@@ -585,7 +596,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
     color: '#475569',
-    textTransform: 'capitalize',
+    textTransform: 'none',
   },
   themeLabelDark: {
     color: '#cbd5e1',
