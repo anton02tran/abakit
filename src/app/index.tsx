@@ -15,14 +15,16 @@ export default function HomeScreen() {
   const [score, setScore] = useState<number>(0);
   const [feedback, setFeedback] = useState<string>('');
 
-  const generateProblem = () => {
+  const generateProblem = (keepFeedback = false) => {
     const n1 = Math.floor(Math.random() * 12) + 1;
     const n2 = Math.floor(Math.random() * 12) + 1;
 
     setNum1(n1);
     setNum2(n2);
     setUserAnswer('');
-    setFeedback('');
+    if (!keepFeedback) {
+      setFeedback('');
+    }
   };
 
   useEffect(() => {
@@ -61,14 +63,14 @@ export default function HomeScreen() {
     const parsedAnswer = parseInt(userAnswer, 10);
 
     if (!userAnswer || Number.isNaN(parsedAnswer)) {
-      setFeedback('Answer first');
+      setFeedback('answer first');
       return;
     }
 
     if (parsedAnswer === num1 * num2) {
       setScore((prev) => prev + 1);
       setFeedback('correct!');
-      setTimeout(generateProblem, 400);
+      generateProblem(true);
     } else {
       setUserAnswer('');
       setFeedback('try again!');
@@ -90,7 +92,7 @@ export default function HomeScreen() {
               feedback ? (feedback.includes('correct') ? styles.answerCorrectText : styles.answerErrorText) : !userAnswer ? styles.answerPlaceholderText : null,
             ]}
           >
-            {feedback || userAnswer || 'Answer here'}
+            {feedback || userAnswer || 'answer here'}
           </Text>
         </View>
 
