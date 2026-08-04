@@ -23,7 +23,7 @@ export default function HomeScreen() {
   const [theme, setTheme] = useState<ThemeMode>('light');
   const [leftSize, setLeftSize] = useState<number>(1);
   const [rightSize, setRightSize] = useState<number>(1);
-  const [settingsTab, setSettingsTab] = useState<'questions' | 'personalization' | 'pace'>('questions');
+  const [settingsTab, setSettingsTab] = useState<'questions' | 'customize' | 'pace'>('questions');
   const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
   const [quickMode, setQuickMode] = useState<boolean>(false);
   const [skipMode, setSkipMode] = useState<boolean>(false);
@@ -344,17 +344,17 @@ export default function HomeScreen() {
               <TouchableOpacity
                 style={[
                   styles.tabButton,
-                  settingsTab === 'personalization' && (isDarkMode ? styles.tabButtonSelectedDark : styles.tabButtonSelected),
+                  settingsTab === 'customize' && (isDarkMode ? styles.tabButtonSelectedDark : styles.tabButtonSelected),
                   isDarkMode && styles.tabButtonDark,
                 ]}
-                onPress={() => setSettingsTab('personalization')}
+                onPress={() => setSettingsTab('customize')}
                 activeOpacity={0.85}
               >
                 <Text style={[
                   styles.tabText,
                   isDarkMode ? styles.tabTextDark : null,
-                  settingsTab === 'personalization' && (isDarkMode ? styles.tabTextSelectedDark : styles.tabTextSelected),
-                ]}>personalization</Text>
+                  settingsTab === 'customize' && (isDarkMode ? styles.tabTextSelectedDark : styles.tabTextSelected),
+                ]}>customize</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[
