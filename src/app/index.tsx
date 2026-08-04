@@ -37,6 +37,7 @@ export default function HomeScreen() {
   const operatorScales = useRef(operatorOptions.map(() => new Animated.Value(1))).current;
   const themeScales = useRef(themeOptions.map(() => new Animated.Value(1))).current;
   const skipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [flashType, setFlashType] = useState<'correct' | 'skip'>('correct');
 
   useEffect(() => {
     Animated.parallel(
@@ -157,7 +158,8 @@ export default function HomeScreen() {
     ]).start();
   };
 
-  const runFlash = () => {
+  const runFlash = (type: 'correct' | 'skip' = 'correct') => {
+    setFlashType(type);
     flashAnim.setValue(0);
     Animated.sequence([
       Animated.timing(flashAnim, {
@@ -203,10 +205,9 @@ export default function HomeScreen() {
       operator === '×' ? num1 * num2 :
       num1 / num2;
 
-    setScore((prev) => prev + 1);
     setFeedback(String(answer));
     setUserAnswer('');
-    runFlash();
+    runFlash('skip');
 
     if (skipTimer.current) {
       clearTimeout(skipTimer.current);
@@ -267,7 +268,13 @@ export default function HomeScreen() {
               transform: [{ translateX: shakeAnim }],
               backgroundColor: flashAnim.interpolate({
                 inputRange: [0, 1],
-                outputRange: isDarkMode ? ['#111827', '#1d2939'] : ['#eef2ff', '#dcfce7'],
+                outputRange: flashType === 'skip'
+                  ? isDarkMode
+                    ? ['#7f1d1d', '#991b1b']
+                    : ['#fecaca', '#fca5a5']
+                  : isDarkMode
+                    ? ['#111827', '#1d2939']
+                    : ['#eef2ff', '#dcfce7'],
               }),
             },
           ]}
