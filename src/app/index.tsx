@@ -501,6 +501,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  submitButtonRaised: {
+    marginTop: -8,
+  },
   submitButtonDisabled: {
     backgroundColor: '#cbd5e1',
   },
@@ -537,6 +540,12 @@ const styles = StyleSheet.create({
     color: '#1e293b',
     textTransform: 'none',
     letterSpacing: 0.5,
+  },
+  settingsButtonDark: {
+    backgroundColor: '#334155',
+  },
+  settingsButtonTextDark: {
+    color: '#f8fafc',
   },
   settingsOverlay: {
     ...StyleSheet.absoluteFillObject,
