@@ -7,7 +7,7 @@ const keypadRows = [
   ['1', '2', '3'],
   ['4', '5', '6'],
   ['7', '8', '9'],
-  ['clear', '0', 'delete'],
+  ['skip', '0', 'delete'],
 ];
 
 const operatorOptions = ['+', '-', '×', '÷'] as const;
@@ -187,9 +187,19 @@ export default function HomeScreen() {
     setUserAnswer((current) => current.slice(0, -1));
   };
 
-  const clearAnswer = () => {
-    setFeedback('');
+  const skipQuestion = () => {
+    const answer =
+      operator === '+' ? num1 + num2 :
+      operator === '-' ? num1 - num2 :
+      operator === '×' ? num1 * num2 :
+      num1 / num2;
+
+    setFeedback(String(answer));
     setUserAnswer('');
+    setTimeout(() => {
+      setFeedback('');
+      generateProblem(true);
+    }, 900);
   };
 
   const checkAnswer = () => {
@@ -268,8 +278,8 @@ export default function HomeScreen() {
           {keypadRows.map((row, rowIndex) => (
             <View key={rowIndex} style={styles.keypadRow}>
               {row.map((key) => {
-                const isFunction = key === 'clear' || key === 'delete';
-                const label = key === 'delete' ? '⌫' : key === 'clear' ? 'clear' : key;
+                const isFunction = key === 'skip' || key === 'delete';
+                const label = key === 'delete' ? '⌫' : key === 'skip' ? 'skip' : key;
 
                 return (
                   <TouchableOpacity
@@ -282,7 +292,7 @@ export default function HomeScreen() {
                       ]}
                     onPress={() => {
                       if (key === 'delete') deleteDigit();
-                      else if (key === 'clear') clearAnswer();
+                      else if (key === 'skip') skipQuestion();
                       else appendDigit(key);
                     }}
                     activeOpacity={0.75}
