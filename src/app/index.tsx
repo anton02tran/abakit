@@ -174,7 +174,7 @@ export default function HomeScreen() {
   return (
     <View style={[styles.container, isDarkMode && styles.containerDark]}>
       <View style={styles.headerRow}>
-        <Text style={styles.title}>abakit</Text>
+        <Text style={[styles.title, isDarkMode && styles.titleDark]}>abakit</Text>
         <TouchableOpacity style={styles.settingsButton} onPress={() => setSettingsOpen(true)} activeOpacity={0.8}>
           <Text style={styles.settingsButtonText}>settings</Text>
         </TouchableOpacity>
@@ -198,18 +198,19 @@ export default function HomeScreen() {
           ]}
         >
           <Animated.Text
-            style={[
-              styles.answerText,
-              { opacity: textOpacity },
-              feedback
-                ? feedback.includes('correct')
-                  ? styles.answerCorrectText
-                  : styles.answerErrorText
-                : !userAnswer
-                ? styles.answerPlaceholderText
-                : null,
-            ]}
-          >
+              style={[
+                styles.answerText,
+                isDarkMode && styles.answerTextDark,
+                { opacity: textOpacity },
+                feedback
+                  ? feedback.includes('correct')
+                    ? styles.answerCorrectText
+                    : styles.answerErrorText
+                  : !userAnswer
+                  ? styles.answerPlaceholderText
+                  : null,
+              ]}
+            >
             {displayText}
           </Animated.Text>
         </Animated.View>
@@ -259,11 +260,11 @@ export default function HomeScreen() {
 
       {settingsOpen && (
         <View style={styles.settingsOverlay}>
-          <View style={styles.settingsCard}>
+          <View style={[styles.settingsCard, isDarkMode && styles.settingsCardDark]}>
             <View style={styles.settingsHeader}>
               <Text style={[styles.settingsTitle, isDarkMode && styles.settingsTitleDark]}>settings</Text>
               <TouchableOpacity style={styles.closeButton} onPress={() => setSettingsOpen(false)} activeOpacity={0.8}>
-                <Text style={styles.closeText}>close</Text>
+                <Text style={[styles.closeText, isDarkMode && styles.closeTextDark]}>close</Text>
               </TouchableOpacity>
             </View>
 
@@ -610,5 +611,17 @@ const styles = StyleSheet.create({
   },
   settingsLabelDark: {
     color: '#94a3b8',
+  },
+  settingsCardDark: {
+    backgroundColor: '#1e293b',
+  },
+  closeTextDark: {
+    color: '#f8fafc',
+  },
+  answerTextDark: {
+    color: '#f8fafc',
+  },
+  titleDark: {
+    color: '#f8fafc',
   },
 });
