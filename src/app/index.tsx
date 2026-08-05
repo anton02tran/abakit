@@ -1,5 +1,6 @@
 ﻿import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
@@ -10,6 +11,22 @@ const keypadRows = [
   ['skip', '0', 'delete'],
 ];
 
+const formatDuration = (seconds: number) => {
+  if (seconds >= 60) {
+    const minutes = Math.floor(seconds / 60);
+    const remSeconds = Math.round(seconds % 60);
+    return `${minutes}m ${remSeconds}s`;
+  }
+  return `${seconds.toFixed(2)}s`;
+};
+
+const formatClock = (ms: number) => {
+  const totalSeconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+};
+
 const operatorOptions = ['+', '-', '×', '÷'] as const;
 const themeOptions = ['light', 'dark'] as const;
 
@@ -17,6 +34,7 @@ type Operator = (typeof operatorOptions)[number];
 type ThemeMode = (typeof themeOptions)[number];
 
 export default function HomeScreen() {
+  const insets = useSafeAreaInsets();
   const [num1, setNum1] = useState<number>(0);
   const [num2, setNum2] = useState<number>(0);
   const [operator, setOperator] = useState<Operator>('×');
@@ -27,6 +45,7 @@ export default function HomeScreen() {
   const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
   const [quickMode, setQuickMode] = useState<boolean>(false);
   const [skipMode, setSkipMode] = useState<boolean>(false);
+  const [showTimer, setShowTimer] = useState<boolean>(false);
   const [userAnswer, setUserAnswer] = useState<string>('');
   const [score, setScore] = useState<number>(0);
   const [feedback, setFeedback] = useState<string>('');
@@ -35,8 +54,9 @@ export default function HomeScreen() {
   const [sessionCorrect, setSessionCorrect] = useState<number>(0);
   const [sessionTotal, setSessionTotal] = useState<number>(0);
   const [sessionTimes, setSessionTimes] = useState<number[]>([]);
-  const [sessionSummary, setSessionSummary] = useState<{ total: number; correct: number; avgTime: number } | null>(null);
+  const [sessionSummary, setSessionSummary] = useState<{ total: number; correct: number; avgTime: number; totalTime: number } | null>(null);
   const [lastResult, setLastResult] = useState<'correct' | 'wrong' | null>(null);
+  const [sessionElapsed, setSessionElapsed] = useState<number>(0);
 
   const flashAnim = useRef(new Animated.Value(0)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
@@ -47,6 +67,8 @@ export default function HomeScreen() {
   const flashRunId = useRef(0);
   const [flashType, setFlashType] = useState<'correct' | 'skip'>('correct');
   const questionStartRef = useRef<number>(Date.now());
+  const questionResolvedRef = useRef<boolean>(false);
+  const sessionStartRef = useRef<number>(Date.now());
   const sessionCounterScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -123,6 +145,7 @@ export default function HomeScreen() {
       setFeedback('');
     }
     questionStartRef.current = Date.now();
+    questionResolvedRef.current = false;
   };
 
   useEffect(() => {
@@ -133,6 +156,17 @@ export default function HomeScreen() {
     // regenerate when digit sizes change
     generateProblem();
   }, [leftSize, rightSize]);
+
+  useEffect(() => {
+    if (!sessionActive || !showTimer) return;
+
+    setSessionElapsed(Date.now() - sessionStartRef.current);
+    const interval = setInterval(() => {
+      setSessionElapsed(Date.now() - sessionStartRef.current);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [sessionActive, showTimer]);
 
   useEffect(() => {
     if (!feedback) return;
@@ -213,7 +247,8 @@ export default function HomeScreen() {
     num1 / num2;
 
   const resolveQuestion = (isCorrect: boolean) => {
-    if (!sessionActive) return;
+    if (!sessionActive || questionResolvedRef.current) return;
+    questionResolvedRef.current = true;
     const elapsed = Date.now() - questionStartRef.current;
     setSessionTimes((prev) => [...prev, elapsed]);
     setSessionTotal((prev) => prev + 1);
@@ -235,14 +270,18 @@ export default function HomeScreen() {
     setSessionTimes([]);
     setSessionSummary(null);
     setLastResult(null);
+    setSessionElapsed(0);
     questionStartRef.current = Date.now();
+    questionResolvedRef.current = false;
+    sessionStartRef.current = Date.now();
   };
 
   const endSession = () => {
     setSessionActive(false);
     const total = sessionTimes.length;
-    const avgTime = total > 0 ? sessionTimes.reduce((sum, t) => sum + t, 0) / total / 1000 : 0;
-    setSessionSummary({ total: sessionTotal, correct: sessionCorrect, avgTime });
+    const totalTime = sessionTimes.reduce((sum, t) => sum + t, 0) / 1000;
+    const avgTime = total > 0 ? totalTime / total : 0;
+    setSessionSummary({ total: sessionTotal, correct: sessionCorrect, avgTime, totalTime });
   };
 
   const submitAnswer = (rawAnswer: string) => {
@@ -281,6 +320,7 @@ export default function HomeScreen() {
     } else {
       setUserAnswer('');
       setFeedback('try again!');
+      resolveQuestion(false);
       runShake();
     }
   };
@@ -331,7 +371,18 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={[styles.container, isDarkMode && styles.containerDark]}>
+    <View
+      style={[
+        styles.container,
+        isDarkMode && styles.containerDark,
+        {
+          paddingTop: 24 + insets.top,
+          paddingBottom: 24 + insets.bottom,
+          paddingLeft: 24 + insets.left,
+          paddingRight: 24 + insets.right,
+        },
+      ]}
+    >
       <View style={styles.headerRow}>
         <Text style={[styles.title, isDarkMode && styles.titleDark]}>abakit</Text>
         <TouchableOpacity style={[styles.settingsButton, isDarkMode && styles.settingsButtonDark]} onPress={() => setSettingsOpen(true)} activeOpacity={0.8}>
@@ -343,6 +394,11 @@ export default function HomeScreen() {
       <View style={styles.sessionRow}>
         {sessionActive ? (
           <>
+            {showTimer && (
+              <View style={[styles.timerBadge, isDarkMode && styles.timerBadgeDark]}>
+                <Text style={[styles.timerText, isDarkMode && styles.timerTextDark]}>{formatClock(sessionElapsed)}</Text>
+              </View>
+            )}
             <Animated.Text
               style={[
                 styles.sessionCounter,
@@ -663,6 +719,25 @@ export default function HomeScreen() {
                     </AnimatedTouchableOpacity>
                   ))}
                 </View>
+                <View style={styles.toggleSection}>
+                  <View>
+                    <Text style={[styles.settingsLabel, isDarkMode && styles.settingsLabelDark]}>show timer</Text>
+                    <Text style={[styles.toggleDescription, isDarkMode && styles.toggleDescriptionDark]}>
+                      Displays a live running timer while a session is active.
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={[
+                      styles.toggleSwitch,
+                      showTimer ? styles.toggleSwitchOn : styles.toggleSwitchOff,
+                      isDarkMode && (showTimer ? styles.toggleSwitchOnDark : styles.toggleSwitchOffDark),
+                    ]}
+                    onPress={() => setShowTimer((current) => !current)}
+                    activeOpacity={0.8}
+                  >
+                    <View style={[styles.toggleThumb, showTimer && styles.toggleThumbOn, isDarkMode && styles.toggleThumbDark]} />
+                  </TouchableOpacity>
+                </View>
               </>
             )}
           </View>
@@ -695,6 +770,13 @@ export default function HomeScreen() {
               <Text style={[styles.summaryLabel, isDarkMode && styles.summaryLabelDark]}>correct</Text>
               <Text style={[styles.summaryValue, isDarkMode ? styles.summaryValueCorrectDark : styles.summaryValueCorrect]}>
                 {sessionSummary.correct}/{sessionSummary.total}
+                {sessionSummary.total > 0 ? ` (${Math.round((sessionSummary.correct / sessionSummary.total) * 100)}%)` : ''}
+              </Text>
+            </View>
+            <View style={[styles.summaryRow, isDarkMode && styles.summaryRowDark]}>
+              <Text style={[styles.summaryLabel, isDarkMode && styles.summaryLabelDark]}>total time</Text>
+              <Text style={[styles.summaryValue, isDarkMode && styles.summaryValueDark]}>
+                {sessionSummary.total > 0 ? formatDuration(sessionSummary.totalTime) : '—'}
               </Text>
             </View>
             <View style={[styles.summaryRow, styles.summaryRowLast]}>
@@ -716,7 +798,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f7',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
   },
   title: {
     fontSize: 36,
@@ -846,7 +927,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   settingsButton: {
     paddingVertical: 8,
@@ -872,7 +953,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: 24,
   },
   settingsCard: {
     width: '100%',
@@ -1234,6 +1315,25 @@ const styles = StyleSheet.create({
   },
   sessionCounterWrongDark: {
     color: '#f87171',
+  },
+  timerBadge: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    backgroundColor: '#e2e8f0',
+    marginRight: 12,
+  },
+  timerBadgeDark: {
+    backgroundColor: '#334155',
+  },
+  timerText: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#334155',
+    letterSpacing: 0.5,
+  },
+  timerTextDark: {
+    color: '#f8fafc',
   },
   summaryCard: {
     maxWidth: 360,
