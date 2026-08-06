@@ -11,13 +11,9 @@
       "icon": "./assets/expo.icon"
     },
     "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
-      },
-      "predictiveBackGestureEnabled": false
+      "backgroundColor": "#090d16",
+      "predictiveBackGestureEnabled": false,
+      "package": "com.hobbyproj.abakit"
     },
     "web": {
       "output": "static",
@@ -37,6 +33,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "4eab9cc1-e29a-4084-8dd8-d11503d479e1"
+      }
+    },
+    "owner": "hobbyproj"
   }
 }
