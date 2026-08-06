@@ -37,6 +37,13 @@
         "projectId": "4eab9cc1-e29a-4084-8dd8-d11503d479e1"
       }
     },
-    "owner": "hobbyproj"
+    "owner": "hobbyproj",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/4eab9cc1-e29a-4084-8dd8-d11503d479e1"
+    },
+    "ios": {}
   }
 }
